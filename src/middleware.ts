@@ -51,26 +51,11 @@ export async function middleware(req: NextRequest) {
 
   // Define access control per role
   const accessControl: Record<string, string[]> = {
-    admin: [
-      "/dashboard",
-      "/inventory",
-      "/sales",
-      "/cash-balance",
-      "/reports",
-      "/settings",
-      "/products",
-      "/recipes",
-    ],
-    cashier: [
-      "/dashboard",
-      "/sales",
-      "/cash-balance",
-    ],
+    admin: ["/dashboard", "/inventory", "/sales", "/cash-balance", "/reports", "/settings", "/products", "/recipes"],
+    cashier: ["/dashboard", "/sales", "/cash-balance"],
   };
 
-  const isProtectedRoute = Object.values(accessControl).some((routes) =>
-    routes.some((route) => pathname.startsWith(route))
-  );
+  const isProtectedRoute = Object.values(accessControl).some((routes) => routes.some((route) => pathname.startsWith(route)));
 
   if (!isAuthenticated && isProtectedRoute) {
     const response = NextResponse.redirect(new URL("/login", req.url));
@@ -78,11 +63,9 @@ export async function middleware(req: NextRequest) {
     return response;
   }
 
-    if (isAuthenticated && role !== "admin") {
+  if (isAuthenticated && role !== "admin") {
     const allowedRoutes = accessControl[role || ""] || [];
-    const hasAccess = allowedRoutes.some((route) =>
-      pathname.startsWith(route)
-    );
+    const hasAccess = allowedRoutes.some((route) => pathname.startsWith(route));
 
     if (!hasAccess) {
       // 🔁 Redirect to a safe route not guarded by middleware
@@ -93,16 +76,5 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 export const config = {
-  matcher: [
-    "/login",
-    "/register",
-    "/dashboard/:path*",
-    "/inventory/:path*",
-    "/sales/:path*",
-    "/cash-balance/:path*",
-    "/reports/:path*",
-    "/settings/:path*",
-    "/products/:path*",
-    "/recipes/:path*",
-  ],
+  matcher: ["/login", "/register", "/dashboard/:path*", "/inventory/:path*", "/sales/:path*", "/cash-balance/:path*", "/reports/:path*", "/settings/:path*", "/products/:path*", "/recipes/:path*"],
 };

@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { RoleProvider } from "@/contexts/roleContext";
+import { RecipeProvider } from "@/contexts/recipeContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,8 +23,10 @@ export default function RootLayout({
       <Script src="https://api.tempolabs.ai/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js" />
       <body className={inter.className}>
           <RoleProvider>
-              {children}
-              <TempoInit />
+              <RecipeProvider>
+                {children}
+                <TempoInit />
+              </RecipeProvider>
           </RoleProvider>
       </body>
     </html>

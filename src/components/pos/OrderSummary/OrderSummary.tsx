@@ -42,9 +42,21 @@ export default function OrderSummary({
   
       await submitOrder({
         items: (props.items || []).map((item) => ({
-          product: { id: item.id, price: item.price, name: item.name },
+          id: item.id,
+          product_id: item.id,
+          product_name: item.product.name,
+          price: item.price,
           quantity: item.quantity,
+          subtotal: item.price * item.quantity,
           note: item.note || "",
+          product: {
+            id: item.id,
+            name: item.product.name,
+            price: item.price,
+            category: "Uncategorized",
+            unit: "pcs",
+            isPackage: false,
+          },
         })),
         customerType: props.customerType || "pilih",
         paymentMethod: paymentMethod,
@@ -69,13 +81,18 @@ export default function OrderSummary({
   return (
     <Card className="h-full bg-white flex flex-col max-w-full">
       {paymentStep === "order" && (
-        <OrderStep {...props} onNext={() => setPaymentStep("payment")} />
+        <OrderStep
+          {...props}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+          onNext={() => setPaymentStep("payment")}
+        />
       )}
       {paymentStep === "payment" && (
         <PaymentStep
           {...props}
-          customerType={props.customerType}
-          setCustomerType={props.setCustomerType}
+          customerType={props.customerType ?? "pilih"}
+          setCustomerType={props.setCustomerType ?? (() => {})}
           paymentMethod={paymentMethod}
           setPaymentMethod={setPaymentMethod}
           cashAmount={cashAmount}
@@ -91,6 +108,7 @@ export default function OrderSummary({
         <ReceiptStep
           {...props}
           paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
           cashAmount={cashAmount}
           onNewOrder={() => {
             setPaymentStep("order");      

@@ -5,34 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/toaster";
-import { productsAPI, ProductCreate } from "@/lib/api";
+import { productsAPI } from "@/lib/api";
+import { ProductCreate } from "@/models/ProductData";
+import Navside from "@/components/navside/navside";
 
 interface Product {
   id: number;
@@ -62,22 +44,22 @@ export default function ProductsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [newProduct, setNewProduct] = useState<Partial<Product>>({});
-  const categories = products.map((product) => product.category);
+  const categories = products.map((product) => product.category).filter((category, index, self) => self.indexOf(category) === index);
 
   useEffect(() => {
     const loadProducts = async () => {
       try {
         // Retrieve the token from localStorage
-        const token = localStorage.getItem("token");
-  
-        if (!token) {
-          console.error("Token not found in localStorage");
-          return;
-        }
-  
+        // const token = localStorage.getItem("token");
+
+        // if (!token) {
+        //   console.error("Token not found in localStorage");
+        //   return;
+        // }
+
         // Call the API with the token in the Authorization header
         const apiProducts = await productsAPI.getAll();
-  
+
         const mappedProducts = apiProducts.map((p) => ({
           ...p,
           isPackage: p.is_package, // convert snake_case to camelCase
@@ -89,24 +71,23 @@ export default function ProductsPage() {
         setLoading(false);
       }
     };
-  
+
     loadProducts();
   }, []);
 
-  
   // Add Product
   const handleAddProduct = async () => {
     try {
       const productToAdd = {
         ...newProduct,
       } as ProductCreate;
-  
+
       // Send the new product to the backend
       const addedProduct = await productsAPI.create(productToAdd);
-      
+
       // Update the local state with the newly added product
       setProducts([...products, addedProduct]);
-  
+
       // Reset the form fields
       setNewProduct({
         name: "",
@@ -116,10 +97,10 @@ export default function ProductsPage() {
         is_package: false,
         image: "",
       });
-  
+
       // Close the dialog
       setIsAddDialogOpen(false);
-  
+
       // Show success message
       alert("Product added successfully!");
     } catch (error) {
@@ -127,62 +108,56 @@ export default function ProductsPage() {
       alert("Failed to add product.");
     }
   };
-  
 
-// Edit Product
-const handleEditProduct = async (id: number, data: ProductUpdate) => {
-  try {
-    // Call the API to update the product
-    const updatedProduct = await productsAPI.update(id, data);
+  // Edit Product
+  const handleEditProduct = async (id: number, data: ProductUpdate) => {
+    try {
+      // Call the API to update the product
+      const updatedProduct = await productsAPI.update(id, data);
 
-    // Update the local state with the updated product
-    setProducts((prevState) => 
-      prevState.map((product) => 
-        product.id === id ? updatedProduct : product
-      )
-    );
+      // Update the local state with the updated product
+      setProducts((prevState) => prevState.map((product) => (product.id === id ? updatedProduct : product)));
 
-    // Show success message
-    alert("Product updated successfully!");
-  } catch (error) {
-    console.error("Failed to update product:", error);
-    alert("Failed to update product.");
-  }
-};
+      // Show success message
+      alert("Product updated successfully!");
+    } catch (error) {
+      console.error("Failed to update product:", error);
+      alert("Failed to update product.");
+    }
+  };
 
-const productToProductUpdate = (product: Product): ProductUpdate => ({
-  name: product.name,
-  price: product.price,
-  category: product.category,
-  unit: product.unit,
-  image: product.image,
-  isPackage: product.is_package,
-});
+  const productToProductUpdate = (product: Product): ProductUpdate => ({
+    name: product.name,
+    price: product.price,
+    category: product.category,
+    unit: product.unit,
+    image: product.image,
+    isPackage: product.is_package,
+  });
 
-// Delete Product
-const handleDeleteProduct = async () => {
-  if (!currentProduct) return;
+  // Delete Product
+  const handleDeleteProduct = async () => {
+    if (!currentProduct) return;
 
-  try {
-    // Call the API to delete the product
-    await productsAPI.delete(currentProduct.id);
+    try {
+      // Call the API to delete the product
+      await productsAPI.delete(currentProduct.id);
 
-    // Remove the product from the local state
-    const filteredProducts = products.filter((p) => p.id !== currentProduct.id);
-    setProducts(filteredProducts);
+      // Remove the product from the local state
+      const filteredProducts = products.filter((p) => p.id !== currentProduct.id);
+      setProducts(filteredProducts);
 
-    // Close the delete dialog and reset the current product
-    setIsDeleteDialogOpen(false);
-    setCurrentProduct(null);
+      // Close the delete dialog and reset the current product
+      setIsDeleteDialogOpen(false);
+      setCurrentProduct(null);
 
-    // Show success message
-    alert("Product deleted successfully!");
-  } catch (error) {
-    console.error("Failed to delete product:", error);
-    alert("Failed to delete product.");
-  }
-};
-
+      // Show success message
+      alert("Product deleted successfully!");
+    } catch (error) {
+      console.error("Failed to delete product:", error);
+      alert("Failed to delete product.");
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -192,7 +167,19 @@ const handleDeleteProduct = async () => {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6">
+    <div className="flex h-screen bg-background">
+      <Navside />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="border-b bg-card p-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold">Product Management</h1>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Add Product
+            </Button>
+          </div>
+        </header>
+        {/* <div className="container mx-auto p-4 md:p-6">
       <Toaster />
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -212,81 +199,67 @@ const handleDeleteProduct = async () => {
         >
           <Plus className="h-4 w-4" /> Add Product
         </Button>
+      </div> */}
+        <main className="flex-1 overflow-auto p-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle>Products</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Image</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Unit</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell>{product.image ? <img src={product.image} alt={product.name} className="h-10 w-10 rounded-md object-cover" /> : <div className="h-10 w-10 rounded-md bg-muted"></div>}</TableCell>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>{product.category}</TableCell>
+                      <TableCell>{formatCurrency(product.price)}</TableCell>
+                      <TableCell>{product.unit}</TableCell>
+                      <TableCell>{product.is_package ? <Badge variant="secondary">Package</Badge> : <Badge variant="outline">Single</Badge>}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setCurrentProduct(product);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => {
+                              setCurrentProduct(product);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </main>
       </div>
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>Products</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Image</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    {product.image ? (
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="h-10 w-10 rounded-md object-cover"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-md bg-muted"></div>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell>{formatCurrency(product.price)}</TableCell>
-                  <TableCell>{product.unit}</TableCell>
-                  <TableCell>
-                    {product.is_package ? (
-                      <Badge variant="secondary">Package</Badge>
-                    ) : (
-                      <Badge variant="outline">Single</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setCurrentProduct(product);
-                          setIsEditDialogOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                        onClick={() => {
-                          setCurrentProduct(product);
-                          setIsDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
 
       {/* Add Product Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -298,14 +271,7 @@ const handleDeleteProduct = async () => {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Product Name</Label>
-                <Input
-                  id="name"
-                  value={newProduct.name}
-                  onChange={(e) =>
-                    setNewProduct({ ...newProduct, name: e.target.value })
-                  }
-                  placeholder="Enter product name"
-                />
+                <Input id="name" value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} placeholder="Enter product name" />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="price">Price</Label>
@@ -324,12 +290,7 @@ const handleDeleteProduct = async () => {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="category">Category</Label>
-                <Select
-                  value={newProduct.category}
-                  onValueChange={(value) =>
-                    setNewProduct({ ...newProduct, category: value })
-                  }
-                >
+                <Select value={newProduct.category} onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}>
                   <SelectTrigger id="category">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -344,14 +305,7 @@ const handleDeleteProduct = async () => {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="unit">Unit</Label>
-                <Input
-                  id="unit"
-                  value={newProduct.unit}
-                  onChange={(e) =>
-                    setNewProduct({ ...newProduct, unit: e.target.value })
-                  }
-                  placeholder="e.g., box, piece, kg"
-                />
+                <Input id="unit" value={newProduct.unit} onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })} placeholder="e.g., box, piece, kg" />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="isPackage">Product Type</Label>
@@ -375,14 +329,7 @@ const handleDeleteProduct = async () => {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="image">Image URL</Label>
-                <Input
-                  id="image"
-                  value={newProduct?.image}
-                  onChange={(e) =>
-                    setNewProduct({ ...newProduct, image: e.target.value })
-                  }
-                  placeholder="Enter image URL"
-                />
+                <Input id="image" value={newProduct?.image} onChange={(e) => setNewProduct({ ...newProduct, image: e.target.value })} placeholder="Enter image URL" />
               </div>
             </div>
           </DialogDescription>
@@ -433,12 +380,7 @@ const handleDeleteProduct = async () => {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="edit-category">Category</Label>
-                  <Select
-                    value={currentProduct.category}
-                    onValueChange={(value) =>
-                      setCurrentProduct({ ...currentProduct, category: value })
-                    }
-                  >
+                  <Select value={currentProduct.category} onValueChange={(value) => setCurrentProduct({ ...currentProduct, category: value })}>
                     <SelectTrigger id="edit-category">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -501,10 +443,7 @@ const handleDeleteProduct = async () => {
             )}
           </DialogDescription>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
             <Button onClick={() => currentProduct && handleEditProduct(currentProduct.id, productToProductUpdate(currentProduct))}>Save changes</Button>
@@ -520,18 +459,11 @@ const handleDeleteProduct = async () => {
           </DialogHeader>
           <DialogDescription>
             <p>
-              Are you sure you want to delete{" "}
-              <span className="font-semibold">
-                {currentProduct?.name || "this product"}
-              </span>
-              ? This action cannot be undone.
+              Are you sure you want to delete <span className="font-semibold">{currentProduct?.name || "this product"}</span>? This action cannot be undone.
             </p>
           </DialogDescription>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteProduct}>

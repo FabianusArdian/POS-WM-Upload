@@ -41,7 +41,7 @@ export function ReceiptStep({
             {items.map((item, index) => (
               <div key={index} className="flex justify-between text-sm">
                 <div>
-                  <span>{item.quantity}x {item.name}</span>
+                  <span>{item.quantity}x {item.product_name}</span>
                   {item.note && <span className="text-xs italic ml-1">({item.note})</span>}
                 </div>
                 <span>{formatCurrency(item.price * item.quantity)}</span>

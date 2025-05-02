@@ -37,7 +37,7 @@ export function OrderStep({
             {items.map((item) => (
               <li key={item.id} className="flex justify-between items-center">
                 <div className="flex-1">
-                  <h4 className="font-medium">{item.name}</h4>
+                  <h4 className="font-medium">{item.product_name}</h4>
                   {item.note && (
                     <div className="flex items-center gap-1 mt-1">
                       <MessageSquare className="h-3 w-3 text-muted-foreground" />

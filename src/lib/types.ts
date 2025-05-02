@@ -15,9 +15,11 @@ export interface OrderItem {
   id: number;
   product_id: number;
   product_name: string;
-  quantity: number;
   price: number;
+  quantity: number;
+  subtotal: number;
   note: string;
+  product: Product;
 }
 
 export interface OrderDetail extends Omit<Order, 'timestamp'> {
@@ -33,15 +35,6 @@ export interface Product {
   isPackage: boolean;
   image?: string;
 }
-
-export interface OrderItem {
-  product: Product;
-  quantity: number;
-  subtotal: number;
-  note: string;
-  discount?: number; // Discount amount in percentage
-}
-
 export interface HeldOrder {
   id: string;
   items: OrderItem[];
@@ -54,5 +47,5 @@ export interface HeldOrder {
   };
 }
 
-export type CustomerType = "dine-in" | "grab" | "gojek" | "shopee";
+export type CustomerType = "pilih" | "dine-in" | "grab" | "gojek" | "shopee";
 export type DiscountType = "percentage" | "nominal";

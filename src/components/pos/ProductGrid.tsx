@@ -1,6 +1,7 @@
 import React from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import ProductCard from "./ProductCard";
+import { OrderItem } from "@/lib/types";
 
 interface Product {
   id: number;
@@ -10,14 +11,6 @@ interface Product {
   unit: string;
   isPackage: boolean;
   image?: string;
-}
-
-interface OrderItem {
-  product: Product;
-  quantity: number;
-  subtotal: number;
-  note: string;
-  discount?: number;
 }
 
 interface ProductGridProps {
@@ -30,6 +23,7 @@ interface ProductGridProps {
   setNoteText: React.Dispatch<React.SetStateAction<string>>;
   setCurrentItemId: React.Dispatch<React.SetStateAction<number | null>>;
   setIsNoteDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  orderLocked: boolean;
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({
@@ -62,7 +56,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
               subtotal: calculateSubtotal(
                 item.product.price,
                 item.quantity + 1,
-                item.discount || 0
+                0
               ),
             }
           : item
@@ -71,11 +65,14 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     } else {
       // Add new item to order
       const newItem: OrderItem = {
-        product,
+        id: product.id,
+        product_id: product.id,
+        product_name: product.name,
+        price: product.price,
         quantity: 1,
         subtotal: product.price,
         note: "",
-        discount: 0,
+        product,
       };
       setCurrentOrder([...currentOrder, newItem]);
     }
@@ -96,7 +93,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                 subtotal: calculateSubtotal(
                   item.product.price,
                   item.quantity - 1,
-                  item.discount || 0
+                  0
                 ),
               }
             : item

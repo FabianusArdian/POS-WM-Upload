@@ -9,6 +9,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { OrderItem } from "@/lib/types"; 
 
 interface Product {
   id: number;
@@ -18,14 +19,6 @@ interface Product {
   unit: string;
   isPackage: boolean;
   image?: string;
-}
-
-interface OrderItem {
-  product: Product;
-  quantity: number;
-  subtotal: number;
-  note: string;
-  discount?: number;
 }
 
 interface NoteDialogProps {

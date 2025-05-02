@@ -77,7 +77,7 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
     setCurrentOrder([]);
     setDiscountType("percentage");
     setDiscountValue("");
-    setCustomerType("walk-in");
+    setCustomerType("pilih");
     setPaymentMethod("cash");
     setOrderLocked(false);
   };
@@ -156,7 +156,7 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
         items: [...currentOrder],
         timestamp: new Date().toLocaleTimeString(),
         total,
-        customerType,
+        customerType: customerType === "pilih" ? "dine-in" : customerType,
         discountInfo: discountValue
           ? { type: discountType, value: discountValue }
           : undefined,
@@ -346,13 +346,7 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
             {/* Customer type and discount selection moved to payment section */}
           </div>
           <OrderSummary
-            items={currentOrder.map((item) => ({
-              id: item.product.id,
-              name: item.product.name,
-              price: item.product.price,
-              quantity: item.quantity,
-              note: item.note,
-            }))}
+            items={currentOrder}
             onRemoveItem={handleRemoveItem}
             onUpdateQuantity={(id, newQuantity) => {
               if (newQuantity <= 0) {
@@ -371,7 +365,7 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
                         subtotal: calculateSubtotal(
                           item.product.price,
                           newQuantity,
-                          item.discount || 0
+                          0
                         ),
                       }
                     : item
@@ -382,7 +376,7 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
             onCheckout={handleCheckout}
             onCancelOrder={() => setCurrentOrder([])}
             customerType={customerType}
-            setCustomerType={setCustomerType}
+            setCustomerType={(val: string) => setCustomerType(val as CustomerType)}
             discountInfo={
               discountValue
                 ? { type: discountType, value: discountValue }

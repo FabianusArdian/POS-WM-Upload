@@ -23,7 +23,7 @@ import { formatCurrency, calculateDiscount, calculateSubtotal, calculateTax } fr
 import { OrderSummaryProps } from "../types";
 
 interface PaymentStepProps extends OrderSummaryProps {
-  customerType: string;
+  customerType: "pilih" | "dine-in" | "grab" | "gojek" | "shopee";
   setCustomerType: (type: string) => void;
   paymentMethod: "cash" | "qris" | "transfer";
   setPaymentMethod: (method: "cash" | "qris" | "transfer") => void;
