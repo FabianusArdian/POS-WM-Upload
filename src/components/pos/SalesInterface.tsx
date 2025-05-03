@@ -270,7 +270,7 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
     <Suspense fallback={<div>Loading...</div>}>
       <div className="flex flex-col md:flex-row h-full bg-background">
         {/* Main content area */}
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-auto sm:p-0 lg:p-4">
           <div className="mb-6">
             <p className="text-muted-foreground">View and manage orders</p>
           </div>
@@ -319,9 +319,9 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
         </div>
 
         {/* Order summary sidebar */}
-        <div className="w-full md:w-[350px] border-t md:border-t-0 md:border-l bg-card">
+        <div className="w-full sm:w-[200px] md:w-[300px] lg:w-[300px] border-t md:border-t-0 md:border-l bg-card">
           <div className="p-4 border-b flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Current Order</h2>
+            <h2 className="text-lg font-semibold sm:text-sm md:text-md">Current Order</h2>
             <div className="flex gap-2">
               <Button
                 variant="default"
