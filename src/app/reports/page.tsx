@@ -7,11 +7,15 @@ import { format } from "date-fns";
 import { ordersAPI } from "@/lib/api";
 import { Order, OrderDetail } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { BarChart3, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Download, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { isSameDay, isSameMonth, isSameYear, parseISO } from "date-fns";
+import { calculateDiscount, calculateSubtotal, calculateTax, formatCurrency } from "@/components/pos/OrderSummary/utils/calculations";
+
 
 export default function ReportsPage() {
   const router = useRouter();
@@ -24,13 +28,20 @@ export default function ReportsPage() {
   const [singleDate, setSingleDate] = useState<Date | undefined>();
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [multipleDates, setMultipleDates] = useState<Date[]>([]);
+  const [search, setSearch] = useState("");
+
+
+  useEffect(() => {
+    if (singleDate) {
+      setDate(singleDate);
+      setPage(1); 
+    }
+  }, [filterType, date, singleDate, dateRange, multipleDates]);
 
   // Fetch orders list
   useEffect(() => {
-    const offset = (page - 1) * 20;
-
     ordersAPI
-      .getAllPaginated({ payment_status: "paid", limit: 10, offset })
+      .getAllPaginated({ payment_status: "paid" })
       .then((data) => {
         if (Array.isArray(data.data)) setOrders(data.data);
       })
@@ -53,24 +64,28 @@ export default function ReportsPage() {
     }
   }, [selectedInvoice]);
 
-  const getFilteredData = () => {
-    if (!orders.length) return [];
+  function getFilteredData() {
+    return orders.filter((order) => {
+      const orderDate = parseISO(order.created_at);
+      const matchSearch = order.order_number.toLowerCase().includes(search.toLowerCase());
 
-    if (filterType === "daily") {
-      const formattedDate = format(date, "yyyy-MM-dd");
-      return orders.filter((order) => order.created_at.startsWith(formattedDate));
-    } else if (filterType === "monthly") {
-      const month = format(date, "yyyy-MM");
-      return orders.filter((order) => order.created_at.startsWith(month));
-    } else {
-      const year = format(date, "yyyy");
-      return orders.filter((order) => order.created_at.startsWith(year));
-    }
-  };
+      if (filterType === "yearly") {
+        return matchSearch && isSameYear(orderDate, date);
+      } else if (filterType === "monthly") {
+        return matchSearch && isSameMonth(orderDate, date);
+      } else {
+        return matchSearch && isSameDay(orderDate, date);
+      }
+    });
+  }
 
   const filteredData = getFilteredData();
+  const paginatedData = filteredData.slice((page - 1) * 10, page * 10);
   const totalSales = filteredData.reduce((sum, order) => sum + order.total_amount, 0);
+  const totalPages = Math.ceil(filteredData.length / 10)
   const totalItems = orderDetail?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+  console.log({ page, filteredDataLength: filteredData.length, paginatedDataLength: paginatedData.length });
+
 
   const navigateDate = (direction: "prev" | "next") => {
     const newDate = new Date(date);
@@ -250,7 +265,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-card divide-y divide-border">
-                    {filteredData.map((tx) => (
+                    {paginatedData.map((tx) => (
                       <tr key={tx.id} onClick={() => setSelectedInvoice(tx.id)} className={`cursor-pointer ${selectedInvoice === tx.id ? "bg-primary/10" : "hover:bg-muted/50"}`}>
                         <td className="px-4 py-3 text-sm">{tx.order_number}</td>
                         <td className="px-4 py-3 text-sm">{format(new Date(tx.created_at), "yyyy-MM-dd HH:mm")}</td>
@@ -274,18 +289,27 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
           <div className="flex justify-between mt-4">
-            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))}>
-              Previous
-            </Button>
-            <span className="text-sm text-muted-foreground">Page {page}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={orders.length < 10} // asumsi full page = masih ada next
-              onClick={() => setPage((prev) => prev + 1)}
-            >
-              Next
-            </Button>
+          <Button
+    variant="outline"
+    size="sm"
+    disabled={page === 1}
+    onClick={() => setPage((prev) => prev - 1)}
+  >
+    Previous
+  </Button>
+
+  <span className="text-sm text-muted-foreground">
+    Page {page} of {totalPages || 1}
+  </span>
+
+  <Button
+    variant="outline"
+    size="sm"
+    disabled={page >= Math.ceil(filteredData.length / 10)}
+    onClick={() => setPage((prev) => prev + 1)}
+  >
+    Next
+  </Button>
           </div>
           {orderDetail && (
             <Card className="mt-6">
@@ -339,6 +363,80 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
           )}
+          {orderDetail && (
+  <>
+    <div className="flex justify-end mt-4 print:hidden">
+      <Button onClick={() => window.print()}>Print Receipt</Button>
+    </div>
+
+    <Card className="mt-6 print:block hidden" id="receipt-section">
+      <CardContent className="pt-4">
+        <div className="text-center mb-4">
+          <h3 className="font-bold text-xl">Warung Makan</h3>
+          <p className="text-sm text-muted-foreground">Jl. Contoh No. 123, Jakarta</p>
+          <p className="text-sm text-muted-foreground">Tel: 021-1234567</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {new Date(orderDetail.created_at).toLocaleString()}
+          </p>
+        </div>
+
+        <Separator className="my-2" />
+
+        <div className="space-y-2 mb-4">
+          {orderDetail.items.map((item) => (
+            <div key={item.id} className="flex justify-between text-sm">
+              <div>
+                <span>
+                  {item.quantity}x {item.product_name}
+                </span>
+                {item.note && (
+                  <span className="text-xs italic ml-1">({item.note})</span>
+                )}
+              </div>
+              <span>{formatCurrency(item.price * item.quantity)}</span>
+            </div>
+          ))}
+        </div>
+
+        <Separator className="my-2" />
+
+        {(() => {
+          const subtotal = calculateSubtotal(orderDetail.items);
+          const tax = calculateTax(subtotal);
+          const total = subtotal + tax;
+
+          return (
+            <>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tax (10%)</span>
+                  <span>{formatCurrency(tax)}</span>
+                </div>
+                <div className="flex justify-between font-bold mt-2">
+                  <span>Total</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+              </div>
+
+              <div className="text-center mt-4 text-xs text-muted-foreground">
+                <p>Payment Method: {orderDetail.payment_method.toUpperCase()}</p>
+                <p className="mt-2">Thank you for your purchase!</p>
+                <p>Please come again</p>
+              </div>
+            </>
+          );
+        })()}
+        
+      </CardContent>
+    </Card>
+  </>
+)}
+
+
         </main>
       </div>
     </div>

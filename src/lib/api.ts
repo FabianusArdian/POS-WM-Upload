@@ -4,14 +4,18 @@
 
 import { UserData } from "@/models/UserData";
 import { RecipeData } from "@/models/RecipeData";
-import { InventoryItem, InventoryItemCreate} from "@/models/InventoryItems";
+import { InventoryItem, InventoryItemCreate } from "@/models/InventoryItems";
 import { getTokenFromCookies } from "./utils";
 import { Product, ProductCreate } from "@/models/ProductData";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URLL || "https://api-pwk.ahmadcloud.my.id";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URLL || "https://api-pwk.ahmadcloud.my.id";
 
 // Generic fetch function with error handling
-async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function fetchAPI<T>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
   const headers = {
@@ -28,7 +32,11 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
     let errorMessage;
     try {
       const errorData = await response.json();
-      errorMessage = Array.isArray(errorData.detail) ? errorData.detail.map((e: any) => e.msg || JSON.stringify(e)).join(", ") : errorData.detail || JSON.stringify(errorData);
+      errorMessage = Array.isArray(errorData.detail)
+        ? errorData.detail
+            .map((e: any) => e.msg || JSON.stringify(e))
+            .join(", ")
+        : errorData.detail || JSON.stringify(errorData);
     } catch (e) {
       errorMessage = `API error: ${response.status}`;
     }
@@ -208,7 +216,15 @@ export const ordersAPI = {
     });
   },
 
-  getAllPaginated: ({ payment_status = "paid", limit = 20, offset = 0 }: { payment_status?: string; limit?: number; offset?: number }) => {
+  getAllPaginated: ({
+    payment_status = "paid",
+    limit = 20,
+    offset = 0,
+  }: {
+    payment_status?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
     const token = getTokenFromCookies();
     const query = `?payment_status=${payment_status}&limit=${limit}&offset=${offset}`;
     return fetchAPI<{ data: Order[] }>(`/orders${query}`, {
@@ -244,6 +260,27 @@ export const ordersAPI = {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
+    });
+  },
+
+  getFavorites: (params?: {
+    category?: string;
+    start_date?: string;
+    end_date?: string;
+  }) => {
+    const token = getTokenFromCookies();
+    const queryParams = [];
+
+    if (params?.category) queryParams.push(`category=${params.category}`);
+    if (params?.start_date) queryParams.push(`start_date=${params.start_date}`);
+    if (params?.end_date) queryParams.push(`end_date=${params.end_date}`);
+
+    const query = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
+
+    return fetchAPI<any>(`/orders/favorites${query}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
   },
 };
@@ -347,5 +384,3 @@ export interface Order {
   created_at: string;
   updated_at: string;
 }
-
-

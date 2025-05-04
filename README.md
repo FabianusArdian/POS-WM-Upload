@@ -1,6 +1,7 @@
 # 🍽️ POS - Warung Makan
 
 A full-featured Point of Sale (POS) system built using **Next.js**, designed for restaurants and small food businesses. This POS provides intuitive interfaces for sales, inventory, product management, and reporting with real-time order handling.
+Deployement: ent: [POS WARUNG MAKAN](https://pos-project-revou.vercel.app/)
 
 ---
 
