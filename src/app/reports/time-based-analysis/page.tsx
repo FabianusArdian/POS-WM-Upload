@@ -18,6 +18,7 @@ import { ordersAPI } from "@/lib/api";
 import { Order, OrderItem } from "@/lib/types";
 import DatePickerWithRange from "@/components/ui/date-picker-with-range";
 import { addDays, isAfter, isBefore } from "date-fns";
+import { DateRange } from "react-day-picker";
 
 export default function TimeBasedAnalysisPage() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function TimeBasedAnalysisPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [date, setDate] = useState({
+  const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
     to: new Date(),
   });
@@ -71,8 +72,8 @@ export default function TimeBasedAnalysisPage() {
         const filteredOrders = ordersResponse.data.filter((order) => {
           const orderDate = new Date(order.created_at);
           return (
-            (!date.from || isAfter(orderDate, date.from)) &&
-            (!date.to || isBefore(orderDate, date.to))
+            (!date?.from || isAfter(orderDate, date?.from)) &&
+            (!date?.to || isBefore(orderDate, date?.to))
           );
         });
 

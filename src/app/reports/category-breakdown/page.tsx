@@ -18,6 +18,7 @@ import { productsAPI, ordersAPI } from "@/lib/api";
 import { Product, Order, OrderItem } from "@/lib/types";
 import DatePickerWithRange from "@/components/ui/date-picker-with-range";
 import { addDays, isAfter, isBefore } from "date-fns";
+import { DateRange } from "react-day-picker";
 
 export default function CategoryBreakdownPage() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function CategoryBreakdownPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [favoritesData, setFavoritesData] = useState<any>(null);
-  const [date, setDate] = useState({
+  const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
     to: new Date(),
   });
@@ -80,6 +81,7 @@ export default function CategoryBreakdownPage() {
 
         // Filter orders by date range
         const filteredOrders = ordersResponse.data.filter((order) => {
+          if (!date) return true;
           const orderDate = new Date(order.created_at);
           return (
             (!date.from || isAfter(orderDate, date.from)) &&
@@ -91,9 +93,10 @@ export default function CategoryBreakdownPage() {
 
         // Fetch favorites data for category breakdown
         try {
+          if (!date) return;
           const favorites = await ordersAPI.getFavorites({
-            from: date.from ? date.from.toISOString() : undefined,
-            to: date.to ? date.to.toISOString() : undefined,
+            start_date: date.from ? date.from.toISOString() : undefined,
+            end_date: date.to ? date.to.toISOString() : undefined,
           });
           setFavoritesData(favorites);
         } catch (favError) {
