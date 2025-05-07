@@ -122,15 +122,6 @@ export default function AdminSidebar() {
               variant="ghost"
               className={`sm:p-0 md:p-0 lg:p-4 ${role === "admin" ? "w-full justify-start" : "hidden"}`}
               size="lg"
-              onClick={() => router.push("/product-report")}
-            >
-              <FileText className="mr-2 h-5 w-5" />
-              Product Report
-            </Button>
-            <Button
-              variant="ghost"
-              className={`sm:p-0 md:p-0 lg:p-4 ${role === "admin" ? "w-full justify-start" : "hidden"}`}
-              size="lg"
               onClick={() => router.push("/cash-balance")}
             >
               <Wallet className="mr-2 h-5 w-5" />

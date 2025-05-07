@@ -2,14 +2,43 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ArrowDownUp, Plus, Wallet } from "lucide-react";
+import AdminSidebar from "@/components/layout/AdminSidebar";
 
 // Mock data for cash transactions
 const mockTransactions = [
@@ -74,9 +103,13 @@ export default function CashBalancePage() {
   });
 
   // Calculate total income, expenses, and balance
-  const totalIncome = transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = transactions
+    .filter((t) => t.type === "income")
+    .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpenses = transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0);
 
   const balance = totalIncome - totalExpenses;
 
@@ -111,24 +144,22 @@ export default function CashBalancePage() {
     if (type === "income") {
       return ["Sales", "Investment", "Other Income"];
     } else {
-      return ["Ingredients", "Utilities", "Rent", "Salary", "Equipment", "Marketing", "Other"];
+      return [
+        "Ingredients",
+        "Utilities",
+        "Rent",
+        "Salary",
+        "Equipment",
+        "Marketing",
+        "Other",
+      ];
     }
   };
 
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar Navigation */}
-      <div className="w-64 border-r bg-card p-4 flex flex-col">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-primary">Food POS</h2>
-          <p className="text-sm text-muted-foreground">Restaurant Management</p>
-        </div>
-
-        <Button variant="ghost" className="w-full justify-start mb-4" size="lg" onClick={() => router.push("/dashboard")}>
-          <ArrowLeft className="mr-2 h-5 w-5" />
-          Back to Dashboard
-        </Button>
-      </div>
+      <AdminSidebar />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -152,7 +183,9 @@ export default function CashBalancePage() {
                 <CardDescription>Total available cash</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(balance)}
+                </div>
               </CardContent>
             </Card>
 
@@ -162,7 +195,9 @@ export default function CashBalancePage() {
                 <CardDescription>All time income</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {formatCurrency(totalIncome)}
+                </div>
               </CardContent>
             </Card>
 
@@ -172,7 +207,9 @@ export default function CashBalancePage() {
                 <CardDescription>All time expenses</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(totalExpenses)}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -181,10 +218,16 @@ export default function CashBalancePage() {
           <Card>
             <CardHeader>
               <CardTitle>Transaction History</CardTitle>
-              <CardDescription>View all cash transactions for your business.</CardDescription>
+              <CardDescription>
+                View all cash transactions for your business.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+              <Tabs
+                defaultValue="all"
+                className="w-full"
+                onValueChange={setActiveTab}
+              >
                 <TabsList className="mb-4">
                   <TabsTrigger value="all">All Transactions</TabsTrigger>
                   <TabsTrigger value="income">Income</TabsTrigger>
@@ -207,14 +250,26 @@ export default function CashBalancePage() {
                         <TableRow key={transaction.id}>
                           <TableCell>{transaction.date}</TableCell>
                           <TableCell>
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${transaction.type === "income" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                              {transaction.type === "income" ? "Income" : "Expense"}
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${transaction.type === "income" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                            >
+                              {transaction.type === "income"
+                                ? "Income"
+                                : "Expense"}
                             </span>
                           </TableCell>
                           <TableCell>{transaction.category}</TableCell>
                           <TableCell>{transaction.description}</TableCell>
                           <TableCell className="text-right">
-                            <span className={transaction.type === "income" ? "text-green-600" : "text-red-600"}>{formatCurrency(transaction.amount)}</span>
+                            <span
+                              className={
+                                transaction.type === "income"
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }
+                            >
+                              {formatCurrency(transaction.amount)}
+                            </span>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -232,7 +287,9 @@ export default function CashBalancePage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Transaction</DialogTitle>
-            <DialogDescription>Enter the details of the new cash transaction.</DialogDescription>
+            <DialogDescription>
+              Enter the details of the new cash transaction.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">

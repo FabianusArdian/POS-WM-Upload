@@ -6,13 +6,13 @@ import InventoryManager from "@/components/pos/InventoryManager";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Navside from "@/components/navside/navside";
+import AdminSidebar from "@/components/layout/AdminSidebar";
 export default function InventoryPage() {
   const router = useRouter();
 
   return (
     <div className="flex h-screen bg-background">
-      <Navside />
+      <AdminSidebar />
 
       <main className="flex-1">
         <Card className="border-none shadow-none">

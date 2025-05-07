@@ -5,16 +5,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/toaster";
 import { productsAPI } from "@/lib/api";
 import { ProductCreate } from "@/models/ProductData";
-import Navside from "@/components/navside/navside";
+import AdminSidebar from "@/components/layout/AdminSidebar";
 
 interface Product {
   id: number;
@@ -44,7 +64,9 @@ export default function ProductsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [newProduct, setNewProduct] = useState<Partial<Product>>({});
-  const categories = products.map((product) => product.category).filter((category, index, self) => self.indexOf(category) === index);
+  const categories = products
+    .map((product) => product.category)
+    .filter((category, index, self) => self.indexOf(category) === index);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -116,7 +138,11 @@ export default function ProductsPage() {
       const updatedProduct = await productsAPI.update(id, data);
 
       // Update the local state with the updated product
-      setProducts((prevState) => prevState.map((product) => (product.id === id ? updatedProduct : product)));
+      setProducts((prevState) =>
+        prevState.map((product) =>
+          product.id === id ? updatedProduct : product,
+        ),
+      );
 
       // Show success message
       alert("Product updated successfully!");
@@ -144,7 +170,9 @@ export default function ProductsPage() {
       await productsAPI.delete(currentProduct.id);
 
       // Remove the product from the local state
-      const filteredProducts = products.filter((p) => p.id !== currentProduct.id);
+      const filteredProducts = products.filter(
+        (p) => p.id !== currentProduct.id,
+      );
       setProducts(filteredProducts);
 
       // Close the delete dialog and reset the current product
@@ -168,7 +196,7 @@ export default function ProductsPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Navside />
+      <AdminSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="border-b bg-card p-4">
@@ -221,12 +249,30 @@ export default function ProductsPage() {
                 <TableBody>
                   {products.map((product) => (
                     <TableRow key={product.id}>
-                      <TableCell>{product.image ? <img src={product.image} alt={product.name} className="h-10 w-10 rounded-md object-cover" /> : <div className="h-10 w-10 rounded-md bg-muted"></div>}</TableCell>
-                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="h-10 w-10 rounded-md object-cover"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-md bg-muted"></div>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {product.name}
+                      </TableCell>
                       <TableCell>{product.category}</TableCell>
                       <TableCell>{formatCurrency(product.price)}</TableCell>
                       <TableCell>{product.unit}</TableCell>
-                      <TableCell>{product.is_package ? <Badge variant="secondary">Package</Badge> : <Badge variant="outline">Single</Badge>}</TableCell>
+                      <TableCell>
+                        {product.is_package ? (
+                          <Badge variant="secondary">Package</Badge>
+                        ) : (
+                          <Badge variant="outline">Single</Badge>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -271,7 +317,14 @@ export default function ProductsPage() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Product Name</Label>
-                <Input id="name" value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} placeholder="Enter product name" />
+                <Input
+                  id="name"
+                  value={newProduct.name}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, name: e.target.value })
+                  }
+                  placeholder="Enter product name"
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="price">Price</Label>
@@ -290,7 +343,12 @@ export default function ProductsPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="category">Category</Label>
-                <Select value={newProduct.category} onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}>
+                <Select
+                  value={newProduct.category}
+                  onValueChange={(value) =>
+                    setNewProduct({ ...newProduct, category: value })
+                  }
+                >
                   <SelectTrigger id="category">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -305,7 +363,14 @@ export default function ProductsPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="unit">Unit</Label>
-                <Input id="unit" value={newProduct.unit} onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })} placeholder="e.g., box, piece, kg" />
+                <Input
+                  id="unit"
+                  value={newProduct.unit}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, unit: e.target.value })
+                  }
+                  placeholder="e.g., box, piece, kg"
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="isPackage">Product Type</Label>
@@ -329,7 +394,14 @@ export default function ProductsPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="image">Image URL</Label>
-                <Input id="image" value={newProduct?.image} onChange={(e) => setNewProduct({ ...newProduct, image: e.target.value })} placeholder="Enter image URL" />
+                <Input
+                  id="image"
+                  value={newProduct?.image}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, image: e.target.value })
+                  }
+                  placeholder="Enter image URL"
+                />
               </div>
             </div>
           </DialogDescription>
@@ -380,7 +452,12 @@ export default function ProductsPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="edit-category">Category</Label>
-                  <Select value={currentProduct.category} onValueChange={(value) => setCurrentProduct({ ...currentProduct, category: value })}>
+                  <Select
+                    value={currentProduct.category}
+                    onValueChange={(value) =>
+                      setCurrentProduct({ ...currentProduct, category: value })
+                    }
+                  >
                     <SelectTrigger id="edit-category">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -443,10 +520,23 @@ export default function ProductsPage() {
             )}
           </DialogDescription>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={() => currentProduct && handleEditProduct(currentProduct.id, productToProductUpdate(currentProduct))}>Save changes</Button>
+            <Button
+              onClick={() =>
+                currentProduct &&
+                handleEditProduct(
+                  currentProduct.id,
+                  productToProductUpdate(currentProduct),
+                )
+              }
+            >
+              Save changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -459,11 +549,18 @@ export default function ProductsPage() {
           </DialogHeader>
           <DialogDescription>
             <p>
-              Are you sure you want to delete <span className="font-semibold">{currentProduct?.name || "this product"}</span>? This action cannot be undone.
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">
+                {currentProduct?.name || "this product"}
+              </span>
+              ? This action cannot be undone.
             </p>
           </DialogDescription>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteProduct}>
