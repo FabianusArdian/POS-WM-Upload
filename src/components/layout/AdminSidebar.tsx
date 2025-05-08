@@ -77,7 +77,7 @@ export default function AdminSidebar() {
               variant="ghost"
               className="w-full justify-start sm:p-0 md:p-2 lg:p-4"
               size="lg"
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/dashboard")}
             >
               <ShoppingCart className="mr-2 h-5 w-5" />
               Sales
