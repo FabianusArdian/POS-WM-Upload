@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/select";
 import { formatCurrency, calculateDiscount, calculateSubtotal, calculateTax } from "../utils/calculations";
 import { OrderSummaryProps } from "../types";
+import { useEffect, useState } from "react";
+
 
 interface PaymentStepProps extends OrderSummaryProps {
   customerType: "pilih" | "dine-in" | "grab" | "gojek" | "shopee";
@@ -30,7 +32,7 @@ interface PaymentStepProps extends OrderSummaryProps {
   cashAmount: string;
   setCashAmount: (amount: string) => void;
   onBack: () => void;
-  onConfirm: () => void;
+  onConfirm: (paymentMethod: "cash" | "qris" | "transfer") => void;
 }
 
 export function PaymentStep({
@@ -52,6 +54,11 @@ export function PaymentStep({
   const subtotalAfterDiscount = subtotal - discountAmount;
   const tax = calculateTax(subtotalAfterDiscount);
   const total = subtotalAfterDiscount + tax;
+  const [localPaymentMethod, setLocalPaymentMethod] = useState(paymentMethod);
+
+  useEffect(() => {
+  setLocalPaymentMethod(paymentMethod);
+  }, [paymentMethod]);
 
   const calculateChange = () => {
     const amount = parseFloat(cashAmount) || 0;
@@ -109,8 +116,10 @@ export function PaymentStep({
 
         <h3 className="text-lg font-semibold mb-4">Payment Method</h3>
         <RadioGroup
-          value={paymentMethod}
-          onValueChange={(value) => setPaymentMethod(value as "cash" | "qris" | "transfer")}
+          value={localPaymentMethod}
+          onValueChange={(value) => {
+            setPaymentMethod(value as "cash" | "qris" | "transfer");
+          }}
           className="space-y-4"
         >
           <div className="flex items-center space-x-2 border rounded-md p-3">
@@ -202,11 +211,13 @@ export function PaymentStep({
             Back
           </Button>
           <Button
-            onClick={onConfirm}
-            disabled={paymentMethod === "cash" && (!cashAmount || parseFloat(cashAmount) < total)}
+            onClick={() => {
+              onConfirm(localPaymentMethod); // ⬅️ kirim payment method yang dipilih
+            }}
           >
             Confirm Payment
           </Button>
+
         </div>
       </CardFooter>
     </>

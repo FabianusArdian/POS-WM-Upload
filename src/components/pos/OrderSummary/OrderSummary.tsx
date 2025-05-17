@@ -28,47 +28,64 @@ export default function OrderSummary({
   >("order");
 
   const [cashAmount, setCashAmount] = useState<string>("");
-  const handleConfirmPayment = async () => {
-    try {
-      const subtotal = calculateSubtotal(props.items || []);
-      const discountAmount = calculateDiscount(
-        props.discountInfo?.type || "percentage",
-        props.discountInfo?.value || "0",
-        subtotal
-      );
-      const subtotalAfterDiscount = subtotal - discountAmount;
-      const tax = calculateTax(subtotalAfterDiscount);
-      const total = subtotalAfterDiscount + tax;
   
+  const handleConfirmPayment = async (confirmedPaymentMethod?: "cash" | "qris" | "transfer") => {
+  try {
+    const subtotal = calculateSubtotal(props.items || []);
+    const discountAmount = calculateDiscount(
+      props.discountInfo?.type || "percentage",
+      props.discountInfo?.value || "0",
+      subtotal
+    );
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    const tax = calculateTax(subtotalAfterDiscount);
+    const total = subtotalAfterDiscount + tax;
+
+    const payloadItems = (props.items || []).map((item) => ({
+      product_id: item.product.id,
+      quantity: item.quantity,
+      price: item.product.price,
+      note: item.note || "",
+    }));
+
+    const paymentMethod =
+      confirmedPaymentMethod && ["cash", "qris", "transfer"].includes(confirmedPaymentMethod)
+        ? confirmedPaymentMethod
+        : "cash";
+
+    console.log("✅ paymentMethod used:", paymentMethod);
+
+    if (props.recalledOrderId) {
       await submitOrder({
-        items: (props.items || []).map((item) => ({
-          id: item.id,
-          product_id: item.id,
-          product_name: item.product.name,
-          price: item.price,
-          quantity: item.quantity,
-          subtotal: item.price * item.quantity,
-          note: item.note || "",
-          product: {
-            id: item.id,
-            name: item.product.name,
-            price: item.price,
-            category: "Uncategorized",
-            unit: "pcs",
-            isPackage: false,
-          },
-        })),
-        customerType: props.customerType || "pilih",
-        paymentMethod: paymentMethod,
+        orderId: Number(props.recalledOrderId),
+        action: "pay",
+        order: {
+          order_type: props.customerType?.toUpperCase() || "DINE-IN",
+          payment_status: "unpaid",
+          payment_method: paymentMethod,
+          total_amount: total,
+          items: payloadItems,
+        },
+      });
+    } else {
+      await submitOrder({
+        items: payloadItems,
+        customerType: props.customerType || "dine-in",
+        paymentMethod,
         status: "paid",
         totalAmount: total,
       });
-  
-      setPaymentStep("receipt");
-    } catch (err: any) {
-      alert("Gagal menyimpan transaksi: " + err.message);
     }
-  };
+
+
+    props.setRecalledOrderId?.(null);
+    localStorage.removeItem("recalledOrderId");
+    localStorage.removeItem("recalledOrderItems");
+    setPaymentStep("receipt");
+  } catch (err: any) {
+    alert("Gagal menyimpan transaksi: " + err.message);
+  }
+};
 
   useEffect(() => {
     if (paymentStep === "payment" || paymentStep === "receipt") {
@@ -79,6 +96,26 @@ export default function OrderSummary({
   }, [paymentStep]);
 
   return (
+      <>
+    {props.recalledOrderId && (
+      <div className="bg-yellow-100 text-yellow-800 text-sm p-3 rounded border border-yellow-300 mb-2 flex justify-between items-center">
+        <div>
+          <strong>Recalled Held Order:</strong> You're editing a held order (ID: {props.recalledOrderId})
+        </div>
+        {props.setRecalledOrderId && (
+          <button
+            className="text-red-600 underline ml-4 text-xs"
+            onClick={() => {
+              props.setRecalledOrderId?.(null);
+              props.onNewOrder?.();
+            }}
+          >
+            Cancel Recall
+          </button>
+        )}
+      </div>
+    )}
+
     <Card className="h-full bg-white flex flex-col max-w-full">
       {paymentStep === "order" && (
         <OrderStep
@@ -99,6 +136,7 @@ export default function OrderSummary({
           setCashAmount={setCashAmount}
           onBack={() => setPaymentStep("order")}
           onConfirm={handleConfirmPayment}
+
         />
       )}
       {paymentStep === "confirmation" && (
@@ -118,5 +156,6 @@ export default function OrderSummary({
         />
       )}
     </Card>
+    </>
   );
 }

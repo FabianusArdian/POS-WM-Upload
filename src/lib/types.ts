@@ -35,15 +35,18 @@ export interface Product {
   isPackage: boolean;
   image?: string;
 }
+
 export interface HeldOrder {
   id: string;
   items: OrderItem[];
   timestamp: string;
   total: number;
   customerType: "dine-in" | "grab" | "gojek" | "shopee";
+  created_at: string;
   discountInfo?: {
     type: "percentage" | "nominal";
     value: string;
+  
   };
 }
 

@@ -14,12 +14,14 @@ import { OrderItem } from "@/lib/types";
       type: "percentage" | "nominal";
       value: string;
     };
-    paymentMethod: "cash" | "qris" | "transfer";
-    setPaymentMethod: (method: "cash" | "qris" | "transfer") => void;
+    paymentMethod?: "cash" | "qris" | "transfer";
+    setPaymentMethod?: (method: "cash" | "qris" | "transfer") => void;
     onUpdateDiscountType?: (type: "percentage" | "nominal") => void;
     onUpdateDiscountValue?: (value: string) => void;
     setOrderLocked?: (locked: boolean) => void;
     onNewOrder?: () => void;
+    recalledOrderId?: string | null;
+    setRecalledOrderId?: (id: string | null) => void;
     
   }
   

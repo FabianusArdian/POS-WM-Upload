@@ -1,46 +1,66 @@
 import { ordersAPI } from "@/lib/api";
 import { getCurrentUserId } from "@/lib/utils";
-import { OrderItem } from "@/lib/types";
 
-interface SubmitOrderParams {
-  items: OrderItem[];
-  customerType: string;
-  paymentMethod?: string;
-  status: "unpaid" | "paid";
-  action?: "pay";
-  orderId?: number;
-  totalAmount: number;
+interface OrderItemPayload {
+  product_id: number;
+  quantity: number;
+  price: number;
+  note?: string;
 }
 
-export async function submitOrder({
-  items,
-  customerType,
-  paymentMethod,
-  status,
-  action,
-  orderId,
-  totalAmount,
-}: SubmitOrderParams) {
-  const userId = getCurrentUserId();
-  if (!userId) throw new Error("User ID not found");
+interface RecallOrderPayload {
+  order_type: string;
+  payment_status: "unpaid";
+  payment_method: string;
+  total_amount: number;
+  created_by?: number;
+  items: OrderItemPayload[];
+}
 
-  const payload = {
-    ...(orderId && { order_id: orderId }),
-    ...(action && { action }), // <- ini tidak akan dikirim kalau undefined
+export interface SubmitOrderParams {
+  items?: OrderItemPayload[];
+  customerType?: string;
+  paymentMethod?: string;
+  status?: string;
+  totalAmount?: number;
+
+  orderId?: number;
+  action?: "pay";
+  order?: RecallOrderPayload;
+}
+
+export async function submitOrder(params: SubmitOrderParams) {
+  const userId = getCurrentUserId() || 0;
+
+  if (params.orderId && params.action === "pay" && params.order) {
+    return await ordersAPI.create({
+      order_id: params.orderId,
+      action: "pay",
+      order: {
+        ...params.order,
+        created_by: params.order.created_by ?? userId,
+      },
+    });
+  }
+  console.log("submitOrder params", {
+  items: params.items,
+  totalAmount: params.totalAmount,
+  status: params.status,
+  paymentMethod: params.paymentMethod,
+  customerType: params.customerType,
+});
+  if (!params.items || !params.totalAmount || !params.status || !params.paymentMethod || !params.customerType) {
+    throw new Error("Missing required field for new order.");
+  }
+
+  return await ordersAPI.create({
     order: {
-      order_type: customerType.toUpperCase(),
-      payment_status: status,
-      payment_method: paymentMethod || null,
-      total_amount: totalAmount,
+      order_type: params.customerType.toUpperCase(),
+      payment_status: params.status,
+      payment_method: params.paymentMethod,
+      total_amount: params.totalAmount,
       created_by: userId,
-      items: items.map((item) => ({
-        product_id: item.product.id,
-        quantity: item.quantity,
-        price: item.product.price,
-        note: item.note,
-      })),
+      items: params.items,
     },
-  };
-
-  return await ordersAPI.create(payload);
+  });
 }

@@ -35,9 +35,9 @@ export function OrderStep({
         ) : (
           <ul className="space-y-4">
             {items.map((item) => (
-              <li key={item.id} className="flex justify-between items-center">
+              <li key={`${item.product.id}-${item.quantity}-${item.note || ""}`} className="flex justify-between items-center">
                 <div className="flex-1">
-                  <h4 className="font-medium">{item.product_name}</h4>
+                  <h4 className="font-medium">{item.product.name}</h4>
                   {item.note && (
                     <div className="flex items-center gap-1 mt-1">
                       <MessageSquare className="h-3 w-3 text-muted-foreground" />
@@ -46,7 +46,7 @@ export function OrderStep({
                       </p>
                     </div>
                   )}
-                  <p className="text-sm text-muted-foreground">{formatCurrency(item.price)}</p>
+                  <p className="text-sm text-muted-foreground">{formatCurrency(item.product.price)}</p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}>

@@ -218,7 +218,7 @@ export const ordersAPI = {
 
   getAllPaginated: ({
     payment_status = "paid",
-    limit = 20,
+    limit = 10000,
     offset = 0,
   }: {
     payment_status?: string;
@@ -252,6 +252,7 @@ export const ordersAPI = {
     });
   },
 
+
   create: (payload: any) => {
     const token = getTokenFromCookies();
     return fetchAPI("/orders", {
@@ -260,6 +261,16 @@ export const ordersAPI = {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
+    });
+  },
+
+  cancelOrder: (id: string | number) => {
+  const token = getTokenFromCookies();
+  return fetchAPI(`/orders/${id}/cancel`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
   },
 
