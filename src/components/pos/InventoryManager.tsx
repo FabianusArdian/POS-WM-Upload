@@ -47,6 +47,8 @@ export default function InventoryManager() {
 
   useEffect(() => {
     const loadInventory = async () => {
+      if (typeof window === "undefined") return;
+      
       try {
         // Retrieve the token from localStorage
         const token = localStorage.getItem("token");
