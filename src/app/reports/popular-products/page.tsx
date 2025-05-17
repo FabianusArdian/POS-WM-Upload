@@ -200,8 +200,8 @@ export default function PopularProductsPage() {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
                   <DatePickerWithRange
-                    date={dateRange}
-                    setDate={setDateRange}
+                    value={dateRange}
+                    setValue={setDateRange}
                   />
                 </PopoverContent>
               </Popover>

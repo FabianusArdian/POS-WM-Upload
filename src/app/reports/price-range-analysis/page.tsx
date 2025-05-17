@@ -143,7 +143,7 @@ export default function PriceRangeAnalysisPage() {
               </h1>
             </div>
             <div>
-              <DatePickerWithRange date={date} setDate={setDate} />
+              <DatePickerWithRange value={date} setValue={setDate} />
             </div>
           </div>
         </header>
