@@ -50,14 +50,7 @@ export default function InventoryManager() {
       if (typeof window === "undefined") return;
       
       try {
-        // Retrieve the token from localStorage
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          console.error("Token not found in localStorage");
-          return;
-        }
-
+        
         // Call the API with the token in the Authorization header
         const apiInventory = await inventoryAPI.getAll();
 
