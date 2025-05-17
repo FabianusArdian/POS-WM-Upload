@@ -374,7 +374,6 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
       localStorage.setItem("heldOrders", JSON.stringify(updated));
   
       await fetchHeldOrdersFromBackend(currentPage);
-      setHeldOrdersCount((prev) => Math.max(prev - 1, 0));
     } catch (err) {
       console.error("Failed to delete held order", err);
       alert("Failed to delete order. Please try again.");

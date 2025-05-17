@@ -1,49 +1,55 @@
 "use client";
 
-import * as React from "react";
-import { addDays, format } from "date-fns";
+import React from "react";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+type Props = {
+  value?: DateRange;
+  setValue?: (value: DateRange) => void;
+};
 
-interface DatePickerWithRangeProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  date?: DateRange | undefined;
-  setDate?: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
-}
+export default function DateRangePickerButton({ value, setValue }: Props) {
+  const [open, setOpen] = React.useState(false);
 
-export default function DatePickerWithRange({
-  className,
-  date,
-  setDate,
-}: DatePickerWithRangeProps) {
-  const [localDate, setLocalDate] = React.useState<DateRange | undefined>({
-    from: new Date(),
-    to: addDays(new Date(), 7),
-  });
-
-  const dateValue = date || localDate;
-  const dateSetterValue = setDate || setLocalDate;
+  const displayValue = () => {
+    if (value?.from && value?.to) {
+      return `${format(value.from, "MMM d, yyyy")} - ${format(value.to, "MMM d, yyyy")}`;
+    }
+    return "Pick a date range";
+  };
 
   return (
-    <div className={cn("grid gap-2", className)}>
-      <Calendar
-        initialFocus
-        mode="range"
-        defaultMonth={dateValue?.from}
-        selected={dateValue}
-        onSelect={dateSetterValue}
-        numberOfMonths={2}
-        className="border rounded-md p-3"
-      />
+    <div className="w-full">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="w-full justify-start text-left font-normal"
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {displayValue()}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <Calendar
+            selectRange
+            onChange={(val) => {
+              const [from, to] = val as [Date, Date];
+              setValue?.({ from, to });
+              setOpen(false);
+            }}
+            value={
+              value?.from && value?.to ? [value.from, value.to] : undefined
+            }
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

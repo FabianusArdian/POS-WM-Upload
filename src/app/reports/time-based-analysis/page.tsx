@@ -16,9 +16,10 @@ import AdminSidebar from "@/components/layout/AdminSidebar";
 import TimeBasedAnalysis from "@/components/product-report/TimeBasedAnalysis";
 import { ordersAPI } from "@/lib/api";
 import { Order, OrderItem } from "@/lib/types";
-import DatePickerWithRange from "@/components/ui/date-picker-with-range";
+import DateRangePickerButton from "@/components/ui/date-picker-with-range";
 import { addDays, isAfter, isBefore } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { isWithinInterval } from "date-fns";
 
 export default function TimeBasedAnalysisPage() {
   const router = useRouter();
@@ -71,10 +72,9 @@ export default function TimeBasedAnalysisPage() {
         // Filter orders by date range
         const filteredOrders = ordersResponse.data.filter((order) => {
           const orderDate = new Date(order.created_at);
-          return (
-            (!date?.from || isAfter(orderDate, date?.from)) &&
-            (!date?.to || isBefore(orderDate, date?.to))
-          );
+          return date?.from && date?.to
+            ? isWithinInterval(orderDate, { start: date.from, end: date.to })
+            : true;
         });
 
         setOrders(filteredOrders);
@@ -133,7 +133,7 @@ export default function TimeBasedAnalysisPage() {
               </h1>
             </div>
             <div>
-              <DatePickerWithRange date={date} setDate={setDate} />
+              <DateRangePickerButton value={date} setValue={setDate} />
             </div>
           </div>
         </header>

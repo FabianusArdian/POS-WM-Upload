@@ -204,6 +204,85 @@ export const productsAPI = {
   },
 };
 
+// cash balance API
+type CashBalanceQueryParams = {
+  start_date?: string;
+  end_date?: string;
+  transaction_type?: "sale" | "other";
+};
+type QueryParams = {
+  start_date?: string;
+  end_date?: string;
+}
+import { CashBalance, expense, income, incomeItem, expenseItem } from "@/models/CashBalances";
+export const cashBalanceAPI = {
+  getAll: (params: CashBalanceQueryParams) => {
+    const { start_date, end_date, transaction_type } = params || {};
+    const token = getTokenFromCookies();
+
+    const query = new URLSearchParams();
+    if (start_date) query.append('start_date', start_date);
+    if (end_date) query.append('end_date', String(end_date));
+    if (transaction_type) query.append('transaction_type', String(transaction_type));
+
+    return fetchAPI<CashBalance>(`/cashflow/incomes?${query.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+  getAllExpenses: (params: QueryParams) => {
+    const { start_date, end_date } = params || {};
+    const token = getTokenFromCookies();
+
+    const query = new URLSearchParams();
+    if (start_date) query.append('start_date', start_date);
+    if (end_date) query.append('end_date', String(end_date));
+
+    return fetchAPI<expense>(`/expenses?${query.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+  getAllIncomes:(params: QueryParams) => {
+    const { start_date, end_date } = params || {};
+    const token = getTokenFromCookies();
+
+    const query = new URLSearchParams();
+    if (start_date) query.append('start_date', start_date);
+    if (end_date) query.append('end_date', String(end_date));
+
+    return fetchAPI<income>(`/incomes?${query.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+  createIncome:(payload: incomeItem) => {
+    const token = getTokenFromCookies();
+    return fetchAPI<incomeItem>("/incomes", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json", // Make sure to set the content type for POST requests
+      },
+    });
+  },
+  createExpense:(payload: expenseItem) => {
+    const token = getTokenFromCookies();
+    return fetchAPI<expenseItem>("/expenses", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json", // Make sure to set the content type for POST requests
+      },
+    });
+  },
+};
+
 // Orders API
 export const ordersAPI = {
   getAll: (status?: string) => {

@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Product, OrderItem, HeldOrder } from "./types";
+import { format } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -96,3 +97,26 @@ export const filterProducts = (
     return matchesCategory && matchesSearch;
   });
 };
+
+export function getCurrentMonthRange(): { current_month_start_date: string; current_month_end_date: string } {
+  const now = new Date();
+
+  const current_month_start_date = new Date(now.getFullYear(), now.getMonth(), 1); // e.g. 2025-05-01T00:00:00
+  const current_month_end_date = new Date(now.getFullYear(), now.getMonth() + 1, 1); // e.g. 2025-06-01T00:00:00
+
+  return {
+    current_month_start_date: current_month_start_date.toISOString(),
+    current_month_end_date: current_month_end_date.toISOString(),
+  };
+}
+
+export function getCurrentMonthDateLimits() {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0); // last day
+
+  return {
+    min_date: format(startOfMonth, "yyyy-MM-dd"), // e.g., "2025-05-01"
+    max_date: format(endOfMonth, "yyyy-MM-dd"),   // e.g., "2025-05-31"
+  };
+}

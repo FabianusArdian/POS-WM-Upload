@@ -9,7 +9,8 @@ import { Order, OrderDetail } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import ReactCalendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 import {
   BarChart3,
   Calendar as CalendarIcon,
@@ -247,29 +248,37 @@ export default function ReportsPage() {
                       {getDateDisplay()}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-4">
                     {calendarMode === "range" && (
-                      <Calendar
-                        mode="range"
-                        selected={dateRange}
-                        onSelect={(date) => setDateRange(date as DateRange)}
-                        required
+                      <ReactCalendar
+                        selectRange
+                        onChange={(value) => {
+                          const range = value as [Date, Date];
+                          setDateRange({ from: range[0], to: range[1] });
+                        }}
+                        value={
+                          dateRange?.from && dateRange?.to
+                            ? [dateRange.from, dateRange.to]
+                            : undefined
+                        }
                       />
                     )}
 
                     {calendarMode === "multiple" && (
-                      <Calendar
-                        mode="multiple"
-                        selected={multipleDates}
-                        onSelect={(date) => setMultipleDates(date as Date[])}
+                      <ReactCalendar
+                        onChange={(value) => {
+                          const dates = Array.isArray(value) ? value : [value];
+                          setMultipleDates(dates as Date[]);
+                        }}
+                        value={multipleDates.length > 0 ? multipleDates[0] : undefined}
+                        selectRange={false}
                       />
                     )}
 
                     {calendarMode === "single" && (
-                      <Calendar
-                        mode="single"
-                        selected={singleDate}
-                        onSelect={(date) => setSingleDate(date as Date)}
+                      <ReactCalendar
+                        onChange={(value) => setSingleDate(value as Date)}
+                        value={singleDate}
                       />
                     )}
                   </PopoverContent>

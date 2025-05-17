@@ -1,5 +1,6 @@
 import React from "react";
 import { Order, OrderItem } from "@/lib/types";
+import { format } from "date-fns";
 
 interface TimeBasedAnalysisProps {
   orders: Order[];
@@ -12,31 +13,40 @@ export default function TimeBasedAnalysis(
     orderItems: [],
   },
 ) {
-  // Group orders by day of week
-  const analyzeOrdersByDayOfWeek = () => {
-    const dayNames = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    const dayStats = dayNames.map((name) => ({ name, count: 0, revenue: 0 }));
+  // Filter orders: only last 1 month from today
+  const today = new Date();
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(today.getMonth() - 1);
 
-    orders.forEach((order) => {
-      const date = new Date(order.created_at);
-      const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+  const filteredOrders = orders.filter((order) => {
+    const orderDate = new Date(order.created_at);
+    return orderDate >= oneMonthAgo && orderDate <= today;
+  });
 
-      dayStats[dayOfWeek].count += 1;
-      dayStats[dayOfWeek].revenue += order.total_amount;
+  // Group filtered orders by date
+  const analyzeOrdersByDate = () => {
+    const dateMap: Record<string, { count: number; revenue: number; date: Date }> = {};
+
+    filteredOrders.forEach((order) => {
+      const dateObj = new Date(order.created_at);
+      const dateKey = format(dateObj, "yyyy-MM-dd");
+
+      if (!dateMap[dateKey]) {
+        dateMap[dateKey] = {
+          count: 0,
+          revenue: 0,
+          date: dateObj,
+        };
+      }
+
+      dateMap[dateKey].count += 1;
+      dateMap[dateKey].revenue += order.total_amount;
     });
 
-    return dayStats;
+    return Object.values(dateMap);
   };
 
-  // Group orders by hour of day
+  // ✅ Group filtered orders by hour
   const analyzeOrdersByHourOfDay = () => {
     const hourStats = Array.from({ length: 24 }, (_, i) => ({
       hour: i,
@@ -44,7 +54,7 @@ export default function TimeBasedAnalysis(
       revenue: 0,
     }));
 
-    orders.forEach((order) => {
+    filteredOrders.forEach((order) => {
       const date = new Date(order.created_at);
       const hour = date.getHours();
 
@@ -55,17 +65,15 @@ export default function TimeBasedAnalysis(
     return hourStats;
   };
 
-  const dayOfWeekData = analyzeOrdersByDayOfWeek();
+  const dateBasedData = analyzeOrdersByDate();
   const hourOfDayData = analyzeOrdersByHourOfDay();
 
-  // Find peak hours (top 3)
   const peakHours = [...hourOfDayData]
     .sort((a, b) => b.count - a.count)
     .slice(0, 3)
     .filter((item) => item.count > 0);
 
-  // Find busiest days (top 3)
-  const busiestDays = [...dayOfWeekData]
+  const busiestDays = [...dateBasedData]
     .sort((a, b) => b.count - a.count)
     .slice(0, 3)
     .filter((item) => item.count > 0);
@@ -109,15 +117,17 @@ export default function TimeBasedAnalysis(
           <div className="space-y-2">
             {busiestDays.map((item) => (
               <div
-                key={item.name}
+                key={item.date.toISOString()}
                 className="flex justify-between items-center p-2 bg-muted/50 rounded-md"
               >
-                <span className="font-medium">{item.name}</span>
-                <div className="flex items-center gap-2">
-                  <span className="bg-primary/10 text-primary px-2 py-1 rounded-md text-sm">
-                    {item.count} orders
+                <div>
+                  <span className="font-medium">
+                    {format(item.date, "EEEE, d MMMM yyyy")}
                   </span>
                 </div>
+                <span className="bg-primary/10 text-primary px-2 py-1 rounded-md text-sm">
+                  {item.count} orders
+                </span>
               </div>
             ))}
           </div>
