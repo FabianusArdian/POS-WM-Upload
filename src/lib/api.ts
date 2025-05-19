@@ -213,17 +213,24 @@ type CashBalanceQueryParams = {
 type QueryParams = {
   start_date?: string;
   end_date?: string;
-}
-import { CashBalance, expense, income, incomeItem, expenseItem } from "@/models/CashBalances";
+};
+import {
+  CashBalance,
+  expense,
+  income,
+  incomeItem,
+  expenseItem,
+} from "@/models/CashBalances";
 export const cashBalanceAPI = {
   getAll: (params: CashBalanceQueryParams) => {
     const { start_date, end_date, transaction_type } = params || {};
     const token = getTokenFromCookies();
 
     const query = new URLSearchParams();
-    if (start_date) query.append('start_date', start_date);
-    if (end_date) query.append('end_date', String(end_date));
-    if (transaction_type) query.append('transaction_type', String(transaction_type));
+    if (start_date) query.append("start_date", start_date);
+    if (end_date) query.append("end_date", String(end_date));
+    if (transaction_type)
+      query.append("transaction_type", String(transaction_type));
 
     return fetchAPI<CashBalance>(`/cashflow/incomes?${query.toString()}`, {
       headers: {
@@ -236,8 +243,8 @@ export const cashBalanceAPI = {
     const token = getTokenFromCookies();
 
     const query = new URLSearchParams();
-    if (start_date) query.append('start_date', start_date);
-    if (end_date) query.append('end_date', String(end_date));
+    if (start_date) query.append("start_date", start_date);
+    if (end_date) query.append("end_date", String(end_date));
 
     return fetchAPI<expense>(`/expenses?${query.toString()}`, {
       headers: {
@@ -245,13 +252,13 @@ export const cashBalanceAPI = {
       },
     });
   },
-  getAllIncomes:(params: QueryParams) => {
+  getAllIncomes: (params: QueryParams) => {
     const { start_date, end_date } = params || {};
     const token = getTokenFromCookies();
 
     const query = new URLSearchParams();
-    if (start_date) query.append('start_date', start_date);
-    if (end_date) query.append('end_date', String(end_date));
+    if (start_date) query.append("start_date", start_date);
+    if (end_date) query.append("end_date", String(end_date));
 
     return fetchAPI<income>(`/incomes?${query.toString()}`, {
       headers: {
@@ -259,7 +266,7 @@ export const cashBalanceAPI = {
       },
     });
   },
-  createIncome:(payload: incomeItem) => {
+  createIncome: (payload: incomeItem) => {
     const token = getTokenFromCookies();
     return fetchAPI<incomeItem>("/incomes", {
       method: "POST",
@@ -270,7 +277,7 @@ export const cashBalanceAPI = {
       },
     });
   },
-  createExpense:(payload: expenseItem) => {
+  createExpense: (payload: expenseItem) => {
     const token = getTokenFromCookies();
     return fetchAPI<expenseItem>("/expenses", {
       method: "POST",
@@ -296,7 +303,7 @@ export const ordersAPI = {
   },
 
   getAllPaginated: ({
-    payment_status = "paid",
+    payment_status,
     limit = 10000,
     offset = 0,
   }: {
@@ -305,7 +312,11 @@ export const ordersAPI = {
     offset?: number;
   }) => {
     const token = getTokenFromCookies();
-    const query = `?payment_status=${payment_status}&limit=${limit}&offset=${offset}`;
+    let queryParams = [`limit=${limit}`, `offset=${offset}`];
+    if (payment_status) {
+      queryParams.push(`payment_status=${payment_status}`);
+    }
+    const query = `?${queryParams.join("&")}`;
     return fetchAPI<{ data: Order[] }>(`/orders${query}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -331,7 +342,6 @@ export const ordersAPI = {
     });
   },
 
-
   create: (payload: any) => {
     const token = getTokenFromCookies();
     return fetchAPI("/orders", {
@@ -344,8 +354,8 @@ export const ordersAPI = {
   },
 
   cancelOrder: (id: string | number) => {
-  const token = getTokenFromCookies();
-  return fetchAPI(`/orders/${id}/cancel`, {
+    const token = getTokenFromCookies();
+    return fetchAPI(`/orders/${id}/cancel`, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,

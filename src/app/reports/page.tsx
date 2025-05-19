@@ -43,7 +43,22 @@ import {
   formatCurrency,
 } from "@/components/pos/OrderSummary/utils/calculations";
 import AdminSidebar from "@/components/layout/AdminSidebar";
-
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Badge } from "@/components/ui/badge";
+    function getBadgeVariant(status: string) {
+      switch (status) {
+        case "paid":
+          return "default";
+        case "unpaid":
+          return "secondary";
+        case "canceled":
+          return "destructive";
+        default:
+          return "outline";
+      }
+    }
 export default function ReportsPage() {
   const router = useRouter();
   const [date, setDate] = useState<Date>(new Date());
@@ -58,6 +73,8 @@ export default function ReportsPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [multipleDates, setMultipleDates] = useState<Date[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid" | "canceled">("all");
+
 
   // Report types for navigation
   const reportTypes = [
@@ -98,14 +115,32 @@ export default function ReportsPage() {
   // Fetch orders list
   useEffect(() => {
     ordersAPI
-      .getAllPaginated({ payment_status: "paid" })
+      const statusParam = statusFilter !== "all" ? { payment_status: statusFilter } : {};
+      ordersAPI
+        .getAllPaginated(statusParam)
       .then((data) => {
         if (Array.isArray(data.data)) setOrders(data.data);
       })
       .catch((err) => {
         console.error("Failed to fetch orders:", err);
       });
-  }, [page]);
+  }, [page, statusFilter]);
+
+    const fetchFullOrdersWithItems = async () => {
+    const filteredOrders = getFilteredData();
+    const details: OrderDetail[] = [];
+
+    for (const order of filteredOrders) {
+      try {
+        const detail = await ordersAPI.getById(String(order.id));
+        details.push(detail as OrderDetail);
+      } catch (err) {
+        console.error(`Failed to get detail for order ${order.id}`, err);
+      }
+    }
+
+    return details;
+  };
 
   // Fetch detail when invoice is selected
   useEffect(() => {
@@ -121,6 +156,13 @@ export default function ReportsPage() {
     }
   }, [selectedInvoice]);
 
+  useEffect(() => {
+  const allButtons = document.querySelectorAll("button button");
+  if (allButtons.length > 0) {
+    console.warn("⚠️ Nested <button> detected:", allButtons);
+  }
+}, []);
+
   function getFilteredData() {
     return orders.filter((order) => {
       const orderDate = parseISO(order.created_at);
@@ -128,13 +170,17 @@ export default function ReportsPage() {
         .toLowerCase()
         .includes(search.toLowerCase());
 
-      if (filterType === "yearly") {
-        return matchSearch && isSameYear(orderDate, date);
-      } else if (filterType === "monthly") {
-        return matchSearch && isSameMonth(orderDate, date);
-      } else {
-        return matchSearch && isSameDay(orderDate, date);
-      }
+      const matchDate =
+        filterType === "yearly"
+          ? isSameYear(orderDate, date)
+          : filterType === "monthly"
+          ? isSameMonth(orderDate, date)
+          : isSameDay(orderDate, date);
+
+      const matchStatus =
+        statusFilter === "all" ? true : order.payment_status === statusFilter;
+
+      return matchSearch && matchDate && matchStatus;
     });
   }
 
@@ -166,6 +212,203 @@ export default function ReportsPage() {
     if (filterType === "daily") return format(date, "EEEE, dd MMMM yyyy");
     if (filterType === "monthly") return format(date, "MMMM yyyy");
     return format(date, "yyyy");
+  };
+
+  // Export functions
+  const handleExportExcel = async () => {
+  const ordersWithItems = await fetchFullOrdersWithItems();
+  const rows: any[] = [];
+
+  ordersWithItems.forEach((order) => {
+    rows.push({
+      "Order Number": order.order_number,
+      Date: new Date(order.created_at).toLocaleString("id-ID"),
+      Status: order.payment_status,
+      Total: "",
+      Product: "",
+      Quantity: "",
+      Price: "",
+    });
+
+    let subtotal = 0;
+
+    order.items.forEach((item) => {
+      const itemTotal = item.price * item.quantity;
+      subtotal += itemTotal;
+
+      rows.push({
+        "Order Number": "",
+        Date: "",
+        Status: "",
+        Total: "",
+        Product: item.product_name,
+        Quantity: item.quantity,
+        Price: item.price,
+      });
+    });
+
+    const tax = subtotal * 0.1;
+    const total = subtotal + tax;
+
+      rows.push({
+        Product: "Subtotal",
+        Price: subtotal,
+      });
+
+      rows.push({
+        Product: "Tax 10%",
+        Price: tax,
+      });
+
+      rows.push({
+        Product: "Total",
+        Price: total,
+      });
+
+      rows.push({}); // empty row
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Transactions");
+    XLSX.writeFile(workbook, `sales_transactions_${Date.now()}.xlsx`);
+  };
+
+
+  const handleExportPDF = async () => {
+  const ordersWithItems = await fetchFullOrdersWithItems();
+  const doc = new jsPDF();
+  let y = 15;
+
+  ordersWithItems.forEach((order, idx) => {
+    doc.setFontSize(10);
+    doc.text(
+      `${idx + 1}. ${order.order_number} | ${new Date(order.created_at).toLocaleString("id-ID")} | ${order.payment_status}`,
+      14,
+      y
+    );
+    y += 6;
+
+    let subtotal = 0;
+
+    const itemRows = order.items.map((item) => {
+      const total = item.price * item.quantity;
+      subtotal += total;
+
+      return [
+        item.product_name,
+        item.quantity,
+        `Rp ${item.price.toLocaleString("id-ID")}`,
+      ];
+    });
+
+    const tax = subtotal * 0.1;
+    const total = subtotal + tax;
+
+      itemRows.push(["Subtotal", "", `Rp ${subtotal.toLocaleString("id-ID")}`]);
+      itemRows.push(["Tax 10%", "", `Rp ${tax.toLocaleString("id-ID")}`]);
+      itemRows.push(["Total", "", `Rp ${total.toLocaleString("id-ID")}`]);
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Product", "Qty", "Price"]],
+        body: itemRows,
+        margin: { left: 14 },
+      });
+
+      y = (doc as any).lastAutoTable.finalY + 10;
+    });
+
+    doc.save(`sales_transactions_${Date.now()}.pdf`);
+  };
+
+
+
+
+  // Print receipt function
+  const printReceipt = () => {
+    if (!orderDetail) return;
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Please allow popups for this website");
+      return;
+    }
+
+    // Calculate values correctly - direct calculation
+    const subtotal = orderDetail.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    );
+    const discount = 0; // If there's no discount in the system
+    const tax = Math.round(subtotal * 0.1); // 10% tax
+    const total = subtotal + tax;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Receipt - ${orderDetail.order_number}</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 300px; margin: 0 auto; padding: 20px 0; }
+            .receipt { padding: 10px; border: 1px solid #eee; border-radius: 5px; }
+            .header, .footer { text-align: center; margin: 10px 0; }
+            .divider { border-top: 1px dashed #000; margin: 10px 0; }
+            .item { display: flex; justify-content: space-between; margin: 5px 0; }
+            .item-name { max-width: 70%; }
+            .item-price { text-align: right; }
+            .total { font-weight: bold; margin-top: 10px; }
+            .small { font-size: 12px; color: #666; }
+            .summary-row { display: flex; justify-content: space-between; margin: 4px 0; }
+            .summary-total { font-weight: bold; font-size: 16px; margin-top: 8px; }
+          </style>
+        </head>
+        <body>
+          <div class="receipt">
+            <div class="header">
+              <h2 style="margin-bottom: 5px;">Warung Makan</h2>
+              <p class="small" style="margin: 5px 0;">Jl. Contoh No. 123, Jakarta</p>
+              <p class="small" style="margin: 5px 0;">Tel: 021-1234567</p>
+              <p class="small" style="margin: 5px 0;">${new Date(orderDetail.created_at).toLocaleString()}</p>
+              <p class="small" style="margin: 5px 0;">Order #: ${orderDetail.order_number}</p>
+            </div>
+            
+            <div class="divider"></div>
+            
+            ${orderDetail.items
+              .map(
+                (item) => `
+              <div class="item">
+                <div class="item-name">${item.quantity}x ${item.product_name} ${item.note ? `<br><span style="font-size: 11px; font-style: italic;">(${item.note})</span>` : ""}</div>
+                <div class="item-price">Rp ${(item.price * item.quantity).toLocaleString()}</div>
+              </div>
+            `,
+              )
+              .join("")}
+            
+            <div class="divider"></div>
+            
+            <div class="summary-row"><span>Subtotal</span><span>Rp ${subtotal.toLocaleString()}</span></div>
+            ${discount > 0 ? `<div class="summary-row"><span>Discount</span><span>Rp ${discount.toLocaleString()}</span></div>` : ""}
+            <div class="summary-row"><span>Tax (10%)</span><span>Rp ${tax.toLocaleString()}</span></div>
+            <div class="summary-row summary-total"><span>Total</span><span>Rp ${total.toLocaleString()}</span></div>
+            
+            <div class="divider"></div>
+            
+            <div class="footer">
+              <p style="margin: 5px 0;">Payment Method: ${orderDetail.payment_method.toUpperCase()}</p>
+              <p style="margin: 10px 0 5px;">Thank you for your purchase!</p>
+              <p style="margin: 5px 0;">Please come again</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
   };
 
   type FilterType = "date" | "range" | "multi";
@@ -225,6 +468,22 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-4">
                 <Select
+                  value={statusFilter}
+                  onValueChange={(val) => setStatusFilter(val as any)}
+                >
+                  <div>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Status Pembayaran" />
+                  </SelectTrigger>
+                  </div>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="unpaid">Unpaid</SelectItem>
+                    <SelectItem value="canceled">Canceled</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
                   value={filterType}
                   onValueChange={(val) => setFilterType(val as any)}
                 >
@@ -238,16 +497,15 @@ export default function ReportsPage() {
                   </SelectContent>
                 </Select>
 
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <CalendarIcon className="h-4 w-4" />
-                      {getDateDisplay()}
-                    </Button>
-                  </PopoverTrigger>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <div>
+                        <Button variant="outline" className="flex items-center gap-2">
+                          <CalendarIcon className="h-4 w-4" />
+                          {getDateDisplay()}
+                        </Button>
+                      </div>
+                    </PopoverTrigger>
                   <PopoverContent className="w-auto p-4">
                     {calendarMode === "range" && (
                       <ReactCalendar
@@ -270,7 +528,11 @@ export default function ReportsPage() {
                           const dates = Array.isArray(value) ? value : [value];
                           setMultipleDates(dates as Date[]);
                         }}
-                        value={multipleDates.length > 0 ? multipleDates[0] : undefined}
+                        value={
+                          multipleDates.length > 0
+                            ? multipleDates[0]
+                            : undefined
+                        }
                         selectRange={false}
                       />
                     )}
@@ -284,27 +546,53 @@ export default function ReportsPage() {
                   </PopoverContent>
                 </Popover>
 
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => navigateDate("prev")}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => navigateDate("next")}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Popover>
+                <PopoverTrigger asChild>
+                  <div>
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Download className="h-4 w-4" />
+                      Export
+                    </Button>
+                  </div>
+                </PopoverTrigger>
+                  <PopoverContent className="w-40 p-2">
+                    <div className="space-y-2">
+                      <div
+                        onClick={handleExportExcel}
+                        className="cursor-pointer text-sm hover:bg-muted p-2 rounded"
+                      >
+                        Export to Excel
+                      </div>
+                      <div
+                        onClick={handleExportPDF}
+                        className="cursor-pointer text-sm hover:bg-muted p-2 rounded"
+                      >
+                        Export to PDF
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
+              <div className="relative">
+                <Button variant="outline" className="flex items-center gap-2 group">
+                  <Download className="h-4 w-4" />
+                  Export
+                  <div className="absolute right-0 mt-10 w-32 bg-white border rounded shadow-md hidden group-hover:block">
+                    <div
+                      onClick={handleExportExcel}
+                      className="cursor-pointer block w-full text-left px-4 py-2 hover:bg-muted"
+                    >
+                      Export Excel
+                    </div>
+                    <div
+                      onClick={handleExportPDF}
+                      className="block w-full text-left px-4 py-2 hover:bg-muted"
+                    >
+                      Export PDF
+                    </div>
+                  </div>
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -398,7 +686,9 @@ export default function ReportsPage() {
                             )}
                           </td>
                           <td className="px-4 py-3 text-sm">
-                            {tx.payment_method}
+                              <Badge variant={getBadgeVariant(tx.payment_status)}>
+                                {tx.payment_status.toUpperCase()}
+                              </Badge>
                           </td>
                           <td className="px-4 py-3 text-sm">
                             Rp {tx.total_amount.toLocaleString()}
@@ -529,7 +819,7 @@ export default function ReportsPage() {
             {orderDetail && (
               <>
                 <div className="flex justify-end mt-4 print:hidden">
-                  <Button onClick={() => window.print()}>Print Receipt</Button>
+                  <Button onClick={printReceipt}>Print Receipt</Button>
                 </div>
 
                 <Card className="mt-6 print:block hidden" id="receipt-section">
