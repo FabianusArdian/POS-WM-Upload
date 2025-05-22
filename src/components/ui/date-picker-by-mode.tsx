@@ -20,7 +20,7 @@ export default function DatePickerByMode({ filterType, value, setValue }: Props)
   const [open, setOpen] = useState(false)
 
   const getDisplay = () => {
-  if (!value) return "Pilih tanggal"
+  if (!value) return "Select Date"
 
   if (filterType === "daily" && value instanceof Date) {
     return format(value, "PPP")
@@ -43,7 +43,7 @@ export default function DatePickerByMode({ filterType, value, setValue }: Props)
     return value.map((v: Date) => format(v, "yyyy")).join(", ")
   }
 
-  return "Pilih tanggal"
+  return "Select Date"
 }
 
   const getView = () => {
