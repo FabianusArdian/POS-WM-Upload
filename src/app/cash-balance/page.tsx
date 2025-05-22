@@ -38,6 +38,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ArrowDownUp, Plus, Wallet } from "lucide-react";
 import AdminSidebar from "@/components/layout/AdminSidebar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { MoreVertical } from "lucide-react"
 
 import { cashBalanceAPI } from "@/lib/api";
 import { CashBalance, expense, income } from "@/models/CashBalances";
@@ -58,6 +60,9 @@ type TabValue = "all" | "income" | "expense";
 import CardSummary from "@/components/pos/cashbalance-components/CardSummary";
 import CardTransactionTable from "@/components/pos/cashbalance-components/CardTransactionTable";
 import AddTransactionDialog from "@/components/pos/cashbalance-components/AddTransactionDialog";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 
 export default function CashBalancePage() {
@@ -84,6 +89,79 @@ export default function CashBalancePage() {
 
   const formatted_start_date = format(current_month_start_date, "PPP");
   const formatted_end_date = format(current_month_end_date, "PPP");
+  const ExportPopover = () => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline">
+          Export <MoreVertical className="ml-2 h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-40 p-2 mb-2"> {/* ← ini */}
+        <div className="flex flex-col gap-2">
+          <Button variant="ghost" className="justify-start" onClick={handleExportExcel}>
+            Export to Excel
+          </Button>
+          <Button variant="ghost" className="justify-start" onClick={handleExportPDF}>
+            Export to PDF
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+
+  const handleExportExcel = () => {
+  const summary = [
+    ["Start Date", formatted_start_date],
+    ["End Date", formatted_end_date],
+    ["Current Balance", balance],
+    ["Total Income", totalIncome],
+    ["Total Expenses", totalExpenses],
+  ]
+
+  const headers = ["Date", "Type", "Category", "Description", "Amount"]
+
+  const transactionRows = transactions.map((tx) => [
+    tx.date ? format(new Date(tx.date), "yyyy-MM-dd") : "-",
+    tx.type ?? "-",
+    tx.category ?? "-",
+    tx.descriptions ?? "-",
+    tx.amount ?? 0,
+  ])
+
+  const sheetData = [...summary, [], headers, ...transactionRows] // ← tambahkan 1 baris kosong antar bagian
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, "Cash Balance Report")
+  XLSX.writeFile(wb, `cash_balance_${Date.now()}.xlsx`)
+  }
+
+
+  const handleExportPDF = () => {
+  const doc = new jsPDF()
+
+  doc.setFontSize(14)
+  doc.text("Cash Balance Report", 14, 15)
+  doc.setFontSize(10)
+  doc.text(`Period: ${formatted_start_date} - ${formatted_end_date}`, 14, 22)
+  doc.text(`Current Balance: Rp ${balance.toLocaleString("id-ID")}`, 14, 28)
+  doc.text(`Total Income: Rp ${totalIncome.toLocaleString("id-ID")}`, 14, 34)
+  doc.text(`Total Expenses: Rp ${totalExpenses.toLocaleString("id-ID")}`, 14, 40)
+
+    autoTable(doc, {
+      startY: 50,
+      head: [["Date", "Type", "Category", "Description", "Amount"]],
+      body: transactions.map(tx => [
+        tx.date ? format(new Date(tx.date), "yyyy-MM-dd") : "-",
+        tx.type ?? "-",
+        tx.category ?? "-",
+        tx.descriptions ?? "-",
+        `Rp ${tx.amount?.toLocaleString("id-ID") ?? "0"}`
+      ])
+    })
+
+    doc.save(`cash_balance_${Date.now()}.pdf`)
+  }
 
 
   // In a real implementation, this would fetch from the API
@@ -298,6 +376,10 @@ export default function CashBalancePage() {
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <CardSummary balance={balance} totalExpenses={totalExpenses} totalIncome={totalIncome} />
+          </div>
+
+          <div className="flex justify-end mb-2">
+            <ExportPopover />
           </div>
 
           {/* Transactions Table */}
