@@ -11,6 +11,8 @@ interface Product {
   unit: string;
   isPackage: boolean;
   image?: string;
+  discount?: number;
+  status?: string;
 }
 
 interface ProductGridProps {
@@ -56,7 +58,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
               subtotal: calculateSubtotal(
                 item.product.price,
                 item.quantity + 1,
-                0
+                item.product.discount || 0
               ),
             }
           : item

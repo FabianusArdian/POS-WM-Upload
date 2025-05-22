@@ -32,6 +32,7 @@ interface Product {
   unit: string;
   isPackage: boolean;
   image?: string;
+  discount?: number;
 }
 
 

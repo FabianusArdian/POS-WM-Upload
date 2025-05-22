@@ -47,8 +47,6 @@ export default function InventoryManager() {
 
   useEffect(() => {
     const loadInventory = async () => {
-      if (typeof window === "undefined") return;
-      
       try {
         
         // Call the API with the token in the Authorization header

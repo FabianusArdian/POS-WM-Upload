@@ -25,14 +25,15 @@ export default function PopularProducts(
   // Calculate product popularity based on order frequency
   const calculatePopularity = () => {
     // If we have favorites data from the API, use that
-    if (favoritesData && Array.isArray(favoritesData.popular_products)) {
-      return favoritesData.popular_products.map((item: any) => ({
-        id: item.product_id,
+    if (favoritesData && Array.isArray(favoritesData)) {
+      return favoritesData.map((item: any, index: number) => ({
+        id: index,
         name: item.product_name,
         category: item.category || "",
-        soldCount: item.quantity || 0,
-      }));
+        soldCount: item.total_sales || 0,
+      }))
     }
+
 
     // Otherwise, fall back to the original calculation
     const productCounts = new Map<number, number>();

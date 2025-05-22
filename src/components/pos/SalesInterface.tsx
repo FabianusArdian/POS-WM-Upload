@@ -139,6 +139,7 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
                     category: "",
                     unit: "",
                     isPackage: false,
+                    discount: item.discount,
                   },
                   subtotal: item.quantity * item.price,
                 }))
@@ -219,7 +220,12 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
   const processOrder = async () => {
     if (currentOrder.length === 0) return
 
-    const total = currentOrder.reduce((sum, item) => sum + item.subtotal, 0)
+    const total = currentOrder.reduce((sum, item) => {
+    const price = item.product.price || 0;
+    const discount = item.product.discount ?? 0;
+    const discountedPrice = price * (1 - discount / 100);
+    return sum + discountedPrice * item.quantity;
+    }, 0);
     const userId = getCurrentUserId()
     if (!userId) {
       alert("User ID not found. Please log in again.")
@@ -238,10 +244,11 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
           items: currentOrder.map((item) => ({
             product_id: item.product.id,
             quantity: item.quantity,
-            price: item.product.price,
+            price: item.product.price * (1 - (item.product.discount ?? 0) / 100),
             note: item.note,
           })),
         },
+        
       })
 
       alert("Order held successfully!")
@@ -441,6 +448,8 @@ export default function SalesInterface({ userId }: SalesInterfaceProps) {
           unit: product.unit,
           isPackage: product.is_package,
           image: product.image,
+          discount: product.discount,
+          status: product.status,
         }))
         setProducts(transformed)
       } catch (error) {

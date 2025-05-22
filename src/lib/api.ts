@@ -484,3 +484,19 @@ export interface Order {
   created_at: string;
   updated_at: string;
 }
+
+import { TimeBasedReport } from "./types";
+export async function fetchTimeBasedReport(
+  startDate: string,
+  endDate: string
+): Promise<TimeBasedReport> {
+  const res = await fetch(
+    `https://api-pwk.ahmadcloud.my.id/orders/reports/time-based?start_date=${startDate}&end_date=${endDate}`
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch time-based report");
+  }
+
+  return res.json();
+}

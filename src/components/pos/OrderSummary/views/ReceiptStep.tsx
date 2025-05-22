@@ -44,7 +44,7 @@ export function ReceiptStep({
                   <span>{item.quantity}x {item.product_name}</span>
                   {item.note && <span className="text-xs italic ml-1">({item.note})</span>}
                 </div>
-                <span>{formatCurrency(item.price * item.quantity)}</span>
+                <span>{formatCurrency( item.price * (1 - (item.product.discount || 0) / 100) * item.quantity)}</span>
               </div>
             ))}
           </div>

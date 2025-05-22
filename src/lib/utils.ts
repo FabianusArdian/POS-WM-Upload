@@ -73,8 +73,15 @@ export const calculateSubtotal = (
   quantity: number,
   discount: number
 ): number => {
-  const subtotal = price * quantity;
-  return discount > 0 ? subtotal * (1 - discount / 100) : subtotal;
+  let subtotal = 0;
+  if (discount > 0){
+     subtotal = (price - (price * discount / 100 )) * quantity;
+  }
+  else {
+     subtotal = price * quantity;
+  }
+  
+  return subtotal;
 };
 
 // Get unique categories from products

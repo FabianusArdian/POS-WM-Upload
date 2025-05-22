@@ -31,11 +31,15 @@ export default function ReportsPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid" | "canceled">("all")
 
   useEffect(() => {
-    if (singleDate) {
+    if (filterType === "daily" && singleDate) {
       setDate(singleDate)
-      setPage(1)
+    } else if (filterType === "monthly" && dateRange?.from) {
+      setDate(dateRange.from)
+    } else if (filterType === "yearly" && multipleDates.length > 0) {
+      setDate(multipleDates[0])
     }
-  }, [filterType, date, singleDate, dateRange, multipleDates])
+    setPage(1)
+  }, [filterType, singleDate, dateRange, multipleDates])
 
   // Fetch orders list
   useEffect(() => {

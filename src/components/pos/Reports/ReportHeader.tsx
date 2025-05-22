@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { DateRange } from "react-day-picker"
+import DatePickerByMode from "@/components/ui/date-picker-by-mode"
 
 interface ReportHeaderProps {
   filterType: "daily" | "monthly" | "yearly"
@@ -90,43 +91,21 @@ export default function ReportHeader({
             </SelectContent>
           </Select>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <div>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4" />
-                  {getDateDisplay()}
-                </Button>
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-4">
-              {calendarMode === "range" && (
-                <ReactCalendar
-                  selectRange
-                  onChange={(value) => {
-                    const range = value as [Date, Date]
-                    setDateRange({ from: range[0], to: range[1] })
-                  }}
-                  value={dateRange?.from && dateRange?.to ? [dateRange.from, dateRange.to] : undefined}
-                />
-              )}
-
-              {calendarMode === "multiple" && (
-                <ReactCalendar
-                  onChange={(value) => {
-                    const dates = Array.isArray(value) ? value : [value]
-                    setMultipleDates(dates as Date[])
-                  }}
-                  value={multipleDates.length > 0 ? multipleDates[0] : undefined}
-                  selectRange={false}
-                />
-              )}
-
-              {calendarMode === "single" && (
-                <ReactCalendar onChange={(value) => setSingleDate(value as Date)} value={singleDate} />
-              )}
-            </PopoverContent>
-          </Popover>
+          <DatePickerByMode
+            value={
+              filterType === "daily"
+                ? singleDate
+                : filterType === "monthly"
+                ? dateRange?.from ? [dateRange.from] : []
+                : multipleDates
+            }
+            setValue={(val) => {
+              if (filterType === "daily") setSingleDate(val)
+              else if (filterType === "monthly") setDateRange({ from: val[0], to: val[0] })
+              else if (filterType === "yearly") setMultipleDates(val)
+            }}
+            filterType={filterType}
+          />
 
           <Popover>
             <PopoverTrigger asChild>

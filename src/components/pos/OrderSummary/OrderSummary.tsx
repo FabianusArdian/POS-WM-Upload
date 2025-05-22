@@ -44,7 +44,7 @@ export default function OrderSummary({
     const payloadItems = (props.items || []).map((item) => ({
       product_id: item.product.id,
       quantity: item.quantity,
-      price: item.product.price,
+      price: item.product.price * (1 - (item.product.discount || 0) / 100),
       note: item.note || "",
     }));
 

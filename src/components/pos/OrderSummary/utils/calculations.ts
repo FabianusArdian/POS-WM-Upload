@@ -6,11 +6,15 @@ export const formatCurrency = (amount: number): string =>
     }).format(amount);
   
     export function calculateSubtotal(items: OrderItem[]): number {
-      return items.reduce(
-        (sum, item) => sum + (item.product?.price || 0) * item.quantity,
-        0
-      );
+      return items.reduce((sum, item) => {
+        const price = item.product?.price || 0;
+        const discount = item.product?.discount ?? 0; // Gunakan 0 jika undefined
+        const discountedPrice = price * (1 - discount / 100);
+
+        return sum + discountedPrice * item.quantity;
+      }, 0);
     }
+
   
     export function calculateDiscount(
       type: "percentage" | "nominal",

@@ -47,15 +47,16 @@ export default function CategoryBreakdown(
   // Calculate sales data for each product
   useEffect(() => {
     // If we have favorites data from the API, use that
-    if (favoritesData && Array.isArray(favoritesData.popular_products)) {
-      const apiData = favoritesData.popular_products.map((item: any) => ({
+    if (favoritesData && Array.isArray(favoritesData)) {
+      const apiData = favoritesData.map((item: any) => ({
         product_name: item.product_name,
-        category: item.category || "",
-        total_sales: item.quantity || 0,
+        category: item.category || "Uncategorized",
+        total_sales: item.total_sales || 0,
       }));
       setProductSalesData(apiData);
       return;
     }
+
 
     // Otherwise, fall back to the original calculation
     const salesByProduct = new Map<string, number>();
@@ -103,18 +104,21 @@ export default function CategoryBreakdown(
   const totalSales = filteredProductSalesData.reduce(
     (sum, item) => sum + item.total_sales,
     0,
-  );
+  )
+
+  const grandTotalSales = productSalesData.reduce(
+    (sum, item) => sum + item.total_sales,
+    0,
+  )
 
   const categorySales = categories.map((category) => {
     const categoryItems = productSalesData.filter(
       (item) => item.category === category,
-    );
-    const count = categoryItems.reduce(
-      (sum, item) => sum + item.total_sales,
-      0,
-    );
-    return { category, count };
-  });
+    )
+    const count = categoryItems.reduce((sum, item) => sum + item.total_sales, 0)
+    return { category, count }
+  })
+  ;
 
   return (
     <div className="space-y-4">
@@ -177,7 +181,7 @@ export default function CategoryBreakdown(
           .sort((a, b) => b.count - a.count)
           .map((item) => {
             const percentage =
-              totalSales > 0 ? (item.count / totalSales) * 100 : 0;
+              grandTotalSales > 0 ? (item.count / grandTotalSales) * 100 : 0
 
             return (
               <div key={item.category} className="space-y-1">

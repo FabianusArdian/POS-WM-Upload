@@ -174,7 +174,7 @@ export default function TimeBasedAnalysisPage() {
                 <CardTitle>Time-Based Analysis</CardTitle>
               </CardHeader>
               <CardContent>
-                <TimeBasedAnalysis orders={orders} orderItems={orderItems} />
+                <TimeBasedAnalysis startDate={date?.from!} endDate={date?.to!} />
               </CardContent>
             </Card>
           )}

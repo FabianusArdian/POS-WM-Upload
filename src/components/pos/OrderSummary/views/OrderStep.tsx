@@ -46,7 +46,7 @@ export function OrderStep({
                       </p>
                     </div>
                   )}
-                  <p className="text-sm text-muted-foreground">{formatCurrency(item.product.price)}</p>
+                  <p className="text-sm text-muted-foreground">{formatCurrency(item.product.price * (1 - (item.product.discount ?? 0) / 100))}</p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}>
@@ -75,12 +75,6 @@ export function OrderStep({
             <div className="flex justify-between">
               <span>Customer Type</span>
               <span className="capitalize">{customerType}</span>
-            </div>
-          )}
-          {discountInfo.value && (
-            <div className="flex justify-between text-green-600">
-              <span>{discountInfo.type === "percentage" ? `Discount (${discountInfo.value}%)` : `Discount (Fixed)`}</span>
-              <span>-{formatCurrency(discountAmount)}</span>
             </div>
           )}
           <div className="flex justify-between">

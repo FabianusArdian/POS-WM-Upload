@@ -6,6 +6,7 @@ export interface Product {
     unit: string;
     is_package: boolean;
     image?: string;
+    discount?: number;
   }
   
   export type ProductCreate = Omit<Product, "id">;
