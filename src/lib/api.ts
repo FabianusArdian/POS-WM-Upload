@@ -8,14 +8,10 @@ import { InventoryItem, InventoryItemCreate } from "@/models/InventoryItems";
 import { getTokenFromCookies } from "./utils";
 import { Product, ProductCreate } from "@/models/ProductData";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URLL || "https://api-pwk.ahmadcloud.my.id";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URLL || "https://api-pwk.ahmadcloud.my.id";
 
 // Generic fetch function with error handling
-async function fetchAPI<T>(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
   const headers = {
@@ -32,11 +28,7 @@ async function fetchAPI<T>(
     let errorMessage;
     try {
       const errorData = await response.json();
-      errorMessage = Array.isArray(errorData.detail)
-        ? errorData.detail
-            .map((e: any) => e.msg || JSON.stringify(e))
-            .join(", ")
-        : errorData.detail || JSON.stringify(errorData);
+      errorMessage = Array.isArray(errorData.detail) ? errorData.detail.map((e: any) => e.msg || JSON.stringify(e)).join(", ") : errorData.detail || JSON.stringify(errorData);
     } catch (e) {
       errorMessage = `API error: ${response.status}`;
     }
@@ -214,13 +206,7 @@ type QueryParams = {
   start_date?: string;
   end_date?: string;
 };
-import {
-  CashBalance,
-  expense,
-  income,
-  incomeItem,
-  expenseItem,
-} from "@/models/CashBalances";
+import { CashBalance, expense, income, incomeItem, expenseItem } from "@/models/CashBalances";
 export const cashBalanceAPI = {
   getAll: (params: CashBalanceQueryParams) => {
     const { start_date, end_date, transaction_type } = params || {};
@@ -229,8 +215,7 @@ export const cashBalanceAPI = {
     const query = new URLSearchParams();
     if (start_date) query.append("start_date", start_date);
     if (end_date) query.append("end_date", String(end_date));
-    if (transaction_type)
-      query.append("transaction_type", String(transaction_type));
+    if (transaction_type) query.append("transaction_type", String(transaction_type));
 
     return fetchAPI<CashBalance>(`/cashflow/incomes?${query.toString()}`, {
       headers: {
@@ -302,15 +287,7 @@ export const ordersAPI = {
     });
   },
 
-  getAllPaginated: ({
-    payment_status,
-    limit = 10000,
-    offset = 0,
-  }: {
-    payment_status?: string;
-    limit?: number;
-    offset?: number;
-  }) => {
+  getAllPaginated: ({ payment_status, limit = 10000, offset = 0 }: { payment_status?: string; limit?: number; offset?: number }) => {
     const token = getTokenFromCookies();
     let queryParams = [`limit=${limit}`, `offset=${offset}`];
     if (payment_status) {
@@ -363,11 +340,7 @@ export const ordersAPI = {
     });
   },
 
-  getFavorites: (params?: {
-    category?: string;
-    start_date?: string;
-    end_date?: string;
-  }) => {
+  getFavorites: (params?: { category?: string; start_date?: string; end_date?: string }) => {
     const token = getTokenFromCookies();
     const queryParams = [];
 
@@ -378,6 +351,22 @@ export const ordersAPI = {
     const query = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
 
     return fetchAPI<any>(`/orders/favorites${query}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  getSalesRangeReport: (params?: { start_date?: string; end_date?: string }) => {
+    const token = getTokenFromCookies();
+
+    const query = new URLSearchParams();
+    if (params?.start_date) query.append("start_date", params.start_date);
+    if (params?.end_date) query.append("end_date", params.end_date);
+
+    const url = `/orders/report/sales-range?${query.toString()}`;
+
+    return fetchAPI<SalesRangeResponse>(url, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -485,14 +474,22 @@ export interface Order {
   updated_at: string;
 }
 
+export interface RangeData {
+  range: string;
+  items_sold: number;
+  percentage: number;
+  products: Product[];
+}
+
+export interface SalesRangeResponse {
+  best_range: string;
+  total_sold: number;
+  ranges: RangeData[];
+}
+
 import { TimeBasedReport } from "./types";
-export async function fetchTimeBasedReport(
-  startDate: string,
-  endDate: string
-): Promise<TimeBasedReport> {
-  const res = await fetch(
-    `https://api-pwk.ahmadcloud.my.id/orders/reports/time-based?start_date=${startDate}&end_date=${endDate}`
-  );
+export async function fetchTimeBasedReport(startDate: string, endDate: string): Promise<TimeBasedReport> {
+  const res = await fetch(`https://api-pwk.ahmadcloud.my.id/orders/reports/time-based?start_date=${startDate}&end_date=${endDate}`);
 
   if (!res.ok) {
     throw new Error("Failed to fetch time-based report");

@@ -3,14 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowLeft,
-  BarChart3,
-  PieChart,
-  LineChart,
-  BarChart,
-  DollarSign,
-} from "lucide-react";
+import { ArrowLeft, BarChart3, PieChart, LineChart, BarChart, DollarSign } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AdminSidebar from "@/components/layout/AdminSidebar";
 import PriceRangeAnalysis from "@/components/product-report/PriceRangeAnalysis";
@@ -19,7 +12,7 @@ import { Product, Order, OrderItem } from "@/lib/types";
 import DatePickerWithRange from "@/components/ui/date-picker-with-range";
 import { addDays, isAfter, isBefore } from "date-fns";
 import { DateRange } from "react-day-picker";
-
+import { SalesRangeResponse } from "@/lib/api";
 export default function PriceRangeAnalysisPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -27,6 +20,7 @@ export default function PriceRangeAnalysisPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [salesRange, setSalesRange] = useState<SalesRangeResponse | null>(null);
   const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
     to: new Date(),
@@ -66,38 +60,28 @@ export default function PriceRangeAnalysisPage() {
       try {
         setLoading(true);
 
-        // Fetch products
-        const productsData = await productsAPI.getAll();
-        setProducts(
-          productsData.map((p) => ({
-            ...p,
-            isPackage: p.is_package ?? false,
-          })),
-        );
+        // Ambil data sales range berdasarkan filter tanggal
+        const response = await ordersAPI.getSalesRangeReport({
+          start_date: date?.from?.toISOString(),
+          end_date: date?.to?.toISOString(),
+        });
 
-        // Fetch orders
         const ordersResponse = await ordersAPI.getAll("paid");
 
-        // Filter orders by date range
+        // Filter orders berdasarkan created_at
         const filteredOrders = ordersResponse.data.filter((order) => {
+          if (!date?.from || !date?.to) return true;
           const orderDate = new Date(order.created_at);
-          return (
-            (!date?.from || isAfter(orderDate, date.from)) &&
-            (!date?.to || isBefore(orderDate, date.to))
-          );
+          return orderDate >= date.from && orderDate <= date.to;
         });
 
         setOrders(filteredOrders);
 
-        // For each order, fetch order details to get items
-        const orderDetailsPromises = filteredOrders.map((order) =>
-          ordersAPI.getById(order.id.toString()),
-        );
+        // Fetch detail dari setiap order
+        const orderDetailsPromises = filteredOrders.map((order) => ordersAPI.getById(order.id.toString()));
 
-        const orderDetailsResults =
-          await Promise.allSettled(orderDetailsPromises);
+        const orderDetailsResults = await Promise.allSettled(orderDetailsPromises);
 
-        // Extract order items from successful responses
         const allOrderItems: OrderItem[] = [];
         orderDetailsResults.forEach((result) => {
           if (result.status === "fulfilled") {
@@ -109,16 +93,17 @@ export default function PriceRangeAnalysisPage() {
         });
 
         setOrderItems(allOrderItems);
+        setSalesRange(response); // update sales range
         setLoading(false);
       } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to load report data. Please try again later.");
+        console.error("Error fetching sales range report:", err);
+        setError("Failed to load sales range report. Please try again later.");
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [date]);
+  }, [date]); // Penting: gunakan date sebagai dependency
 
   return (
     <div className="flex h-screen bg-background">
@@ -131,16 +116,10 @@ export default function PriceRangeAnalysisPage() {
         <header className="border-b bg-card p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push("/reports")}
-              >
+              <Button variant="ghost" size="icon" onClick={() => router.push("/reports")}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <h1 className="text-xl font-semibold">
-                Price Range Analysis Report
-              </h1>
+              <h1 className="text-xl font-semibold">Price Range Analysis Report</h1>
             </div>
             <div>
               <DatePickerWithRange value={date} setValue={setDate} />
@@ -152,15 +131,9 @@ export default function PriceRangeAnalysisPage() {
         <div className="p-6 pb-0">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             {reportTypes.map((report) => (
-              <Card
-                key={report.path}
-                className={`cursor-pointer hover:bg-muted/50 transition-colors ${report.path === "/reports/price-range-analysis" ? "bg-primary/10" : ""}`}
-                onClick={() => router.push(report.path)}
-              >
+              <Card key={report.path} className={`cursor-pointer hover:bg-muted/50 transition-colors ${report.path === "/reports/price-range-analysis" ? "bg-primary/10" : ""}`} onClick={() => router.push(report.path)}>
                 <CardContent className="flex flex-col items-center justify-center p-6">
-                  <div className="rounded-full bg-primary/10 p-3 mb-3">
-                    {report.icon}
-                  </div>
+                  <div className="rounded-full bg-primary/10 p-3 mb-3">{report.icon}</div>
                   <h3 className="font-medium text-center">{report.name}</h3>
                 </CardContent>
               </Card>
@@ -184,10 +157,7 @@ export default function PriceRangeAnalysisPage() {
                 <CardTitle>Price Range Analysis</CardTitle>
               </CardHeader>
               <CardContent>
-                <PriceRangeAnalysis
-                  products={products}
-                  orderItems={orderItems}
-                />
+                <PriceRangeAnalysis products={products} salesRange={salesRange} />
               </CardContent>
             </Card>
           )}
