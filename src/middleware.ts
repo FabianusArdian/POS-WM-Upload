@@ -24,14 +24,6 @@ export async function middleware(req: NextRequest) {
       role = payload.role as string; // ⬅️ Extract role from JWT payload
       console.log("✅ Authenticated as:", role);
 
-      const response = NextResponse.next();
-      response.cookies.set("role", role, {
-        path: "/",
-        httpOnly: false, // 🔓 so it’s readable by frontend JavaScript
-        sameSite: "lax",
-        maxAge: 60 * 15, // 15 minutes
-      });
-      return response;
     } catch (error) {
       console.error("❌ Invalid or expired JWT:", error);
       const response = NextResponse.redirect(new URL("/login", req.url));
